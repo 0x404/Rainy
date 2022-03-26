@@ -3,6 +3,7 @@ import torch
 import logging
 import torch.nn as nn
 import torch.nn.functional as F
+import torchvision.transforms as transforms
 from torch.utils.data import DataLoader
 from torch.utils.data import Dataset
 from torchvision.io import read_image
@@ -21,7 +22,7 @@ config = {
     "epochs": 100,
     "acc_step": 1,
     "log_every_n_step": 200,
-    "lr": 0.0001,
+    "lr": 0.00005,
     # "total_step": 50000,
     "save_ckpt_n_step": 2000,
     "T_max": 10,
@@ -37,9 +38,14 @@ class CifarDataset(Dataset):
         get_lable: whther this Dataset has labels.
     """
 
-    def __init__(self, file, data_base_dir="Dataset/image/", get_label=True):
+    def __init__(
+        self, file, data_base_dir="Dataset/image/", get_label=True, item_transform=None
+    ):
         if not os.path.isdir(data_base_dir):
             raise ValueError(f"{data_base_dir} is not a dir!")
+        self.item_transform = None
+        if item_transform is not None and not isinstance(item_transform, list):
+            self.item_transform = [item_transform]
         self.base_dir = data_base_dir
         self.get_label = get_label
         self.file = file
@@ -75,6 +81,9 @@ class CifarDataset(Dataset):
         try:
             image = read_image(os.path.join(self.base_dir, self.images[index]))
             image = image.to(torch.float32)
+            if self.item_transform is not None:
+                for t in self.item_transform:
+                    image = t(image)
             label = torch.tensor(self.labels[index], dtype=torch.long)
         except:
             logger.error(f"Get error when read item {index} in {self.file}")
@@ -90,25 +99,23 @@ class Net(nn.Module):
 
     def __init__(self):
         super(Net, self).__init__()
-        self.conv1 = nn.Conv2d(3, 6, (7, 7), padding=1)
+        self.conv1 = nn.Conv2d(3, 32, (5, 5))
         self.pool1 = nn.MaxPool2d((2, 2))
-        self.conv2 = nn.Conv2d(6, 16, (7, 7), padding=1)
+        self.conv2 = nn.Conv2d(32, 24, (7, 7), padding=1)
         self.pool2 = nn.MaxPool2d((2, 2))
-        self.linears = [
-            nn.Linear(16 * 5 * 5, 120),
-            nn.Linear(120, 84),
-            nn.Linear(84, 10),
-        ]
+        self.linear1 = nn.Linear(24 * 5 * 5, 120)
+        self.linear2 = nn.Linear(120, 84)
+        self.linear3 = nn.Linear(84, 10)
 
     def forward(self, x):
         """Forward function"""
         x = F.relu(self.conv1(x))
         x = self.pool1(x)
         x = F.relu(self.conv2(x))
-        x = self.pool2(x).view(-1, 16 * 5 * 5)
-        for linear in self.linears:
-            x = linear(x)
-        x = F.softmax(x, dim=1)
+        x = self.pool2(x).view(-1, 24 * 5 * 5)
+        x = F.relu(self.linear1(x))
+        x = F.relu(self.linear2(x))
+        x = self.linear3(x)
         return x
 
 
@@ -133,16 +140,19 @@ def train(model, config, train_dataset, eval_dataset):
     logger.info(f"  Num Epochs = {config.get('epochs')}")
     logger.info(f"  Global Total Step = {total_step}")
     logger.info(f"  Accumulate Gradient Step = {config.get('acc_step')}")
+    logger.info(f"  Model Structure = {model}")
 
     best_accuracy = 0
     criterion = nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=config["lr"])
-    lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=config['T_max'])
+    lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+        optimizer, T_max=config["T_max"]
+    )
     optimizer.zero_grad()
-    
+
     completed_step = 0
     for epoch in range(config["epochs"]):
-        logger.info(f'epoch : {epoch}\tlearning rate : {lr_scheduler.get_lr()}')
+        logger.info(f"epoch : {epoch}\tlearning rate : {lr_scheduler.get_last_lr()}")
         for step, batch in enumerate(train_loader):
             images, labels = batch
             if epoch == 0 and step == 0:
@@ -155,7 +165,7 @@ def train(model, config, train_dataset, eval_dataset):
 
             outputs = model(images)
             loss = criterion(outputs, labels)
-            
+
             loss.backward()
 
             if step % config["acc_step"] == 0 or step == len(train_loader) - 1:
@@ -180,6 +190,7 @@ def train(model, config, train_dataset, eval_dataset):
                 break
         lr_scheduler.step()
     logger.info("Training Finish!")
+    eval(model, config, eval_dataset, best_accuracy, is_training=True)
 
 
 def eval(model, config, eval_dataset, best_accuracy, is_training=False):
@@ -212,18 +223,28 @@ def eval(model, config, eval_dataset, best_accuracy, is_training=False):
     accuracy = correct_items / total_items
     if accuracy > best_accuracy:
         best_accuracy = accuracy
-        torch.save(model, 'model-best-accuracy')
+        torch.save(model, "model-best-accuracy")
     logger.info(f"{eval_type} Finish!\tAccuracy:{accuracy * 100:.2f}%\tBest Accuracy:{best_accuracy*100:.2f}%")
     return best_accuracy
-        
 
 
 if __name__ == "__main__":
 
-    dev_set = CifarDataset("Dataset/validset.txt")
-    train_set = CifarDataset("Dataset/trainset.txt")
+    dev_set = CifarDataset(
+        "Dataset/validset.txt",
+        item_transform=[
+            transforms.Normalize(mean=(0.5, 0,5, 0,5), std=(0,5, 0,5, 0,5))
+        ],
+    )
+    train_set = CifarDataset(
+        "Dataset/trainset.txt",
+        item_transform=[
+            transforms.RandomCrop(32, padding=4),
+            transforms.RandomHorizontalFlip(0.3),
+            transforms.Normalize(mean=(0.5, 0,5, 0,5), std=(0,5, 0,5, 0,5)),
+        ],
+    )
     test_set = CifarDataset("Dataset/trainset.txt", get_label=False)
 
     net = Net()
     train(net, config, train_set, dev_set)
-    # eval(net, config, dev_set)
