@@ -1,21 +1,16 @@
 import os
 import torch
-import logging
 import torch.nn as nn
 import torch.nn.functional as F
 import torchvision.transforms as transforms
+from utils import get_logger
 from torch.utils.data import DataLoader
 from torch.utils.data import Dataset
 from torchvision.io import read_image
 from tqdm import tqdm
 
-logging.basicConfig(
-    format="%(asctime)s - %(levelname)s - %(name)s -   %(message)s",
-    datefmt="%Y/%m/%d %H:%M:%S",
-    level=logging.INFO,
-)
-logger = logging.getLogger("Classifier")
 
+logger = get_logger('Trainer')
 
 config = {
     "batch_size": 32,
@@ -100,19 +95,21 @@ class Net(nn.Module):
     def __init__(self):
         super(Net, self).__init__()
         self.conv1 = nn.Conv2d(3, 32, (5, 5))
-        self.pool1 = nn.MaxPool2d((2, 2))
         self.conv2 = nn.Conv2d(32, 24, (7, 7), padding=1)
+        self.pool1 = nn.MaxPool2d((2, 2))
+        self.conv3 = nn.Conv2d(24, 8, (5, 5), padding=1)
         self.pool2 = nn.MaxPool2d((2, 2))
-        self.linear1 = nn.Linear(24 * 5 * 5, 120)
+        self.linear1 = nn.Linear(8 * 5 * 5, 120)
         self.linear2 = nn.Linear(120, 84)
         self.linear3 = nn.Linear(84, 10)
 
     def forward(self, x):
         """Forward function"""
         x = F.relu(self.conv1(x))
-        x = self.pool1(x)
         x = F.relu(self.conv2(x))
-        x = self.pool2(x).view(-1, 24 * 5 * 5)
+        x = self.pool2(x)
+        x = F.relu(self.conv3(x))
+        x = self.pool2(x).view(-1, 8 * 5 *5)
         x = F.relu(self.linear1(x))
         x = F.relu(self.linear2(x))
         x = self.linear3(x)
@@ -240,7 +237,7 @@ if __name__ == "__main__":
         "Dataset/trainset.txt",
         item_transform=[
             transforms.RandomCrop(32, padding=4),
-            transforms.RandomHorizontalFlip(0.3),
+            transforms.RandomHorizontalFlip(),
             transforms.Normalize(mean=(0.5, 0,5, 0,5), std=(0,5, 0,5, 0,5)),
         ],
     )
