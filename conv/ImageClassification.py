@@ -12,6 +12,7 @@ from tqdm import tqdm
 
 logger = get_logger('Trainer')
 
+
 config = {
     "batch_size": 32,
     "epochs": 100,

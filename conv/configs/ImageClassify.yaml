@@ -1,0 +1,11 @@
+data_root: 'Data/'
+checkpoint_path: 'Checkpoints/'
+lr: 0.00005
+train_batch_size: 32
+eval_batch_size: 32
+epochs: 25
+accumulate_step: 1
+log_every_n_step: 200
+save_ckpt_n_step: 2000
+model_name: 'ImageClassifier'
+task: 'ImageClassify'
