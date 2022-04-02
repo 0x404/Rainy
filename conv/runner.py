@@ -8,9 +8,9 @@ from torch.utils.data import DataLoader
 from torch.utils.data import Dataset
 from torchvision.io import read_image
 from tqdm import tqdm
+import task
 
-
-logger = get_logger("Trainer")
+logger = get_logger("Runner")
 
 
 config = {
@@ -25,96 +25,12 @@ config = {
 }
 
 
-class CifarDataset(Dataset):
-    """DataSet for Cifar task.
-    
-    Args:
-        file: data file path.
-        data_base_dir: directory of images.
-        get_lable: whther this Dataset has labels.
-    """
-
-    def __init__(
-        self, file, data_base_dir="Dataset/image/", get_label=True, item_transform=None
-    ):
-        if not os.path.isdir(data_base_dir):
-            raise ValueError(f"{data_base_dir} is not a dir!")
-        self.item_transform = None
-        if item_transform is not None and not isinstance(item_transform, list):
-            self.item_transform = [item_transform]
-        self.base_dir = data_base_dir
-        self.get_label = get_label
-        self.file = file
-        self.images = list()
-        self.labels = list()
-        self.from_file(file)
-
-    def from_file(self, file):
-        """Construct DataSet from file"""
-        self.reset()
-        self.file = file
-        with open(file, mode="r") as f:
-            for line in f:
-                line = line.strip("\n")
-                if len(line.split(" ")) == 2:
-                    image, label = line.split(" ")
-                elif not self.get_label:
-                    image = line
-                    label = 0
-                else:
-                    logger.error(f"data set {self.file} has no labels!")
-                    raise ValueError
-                self.images.append(image)
-                self.labels.append(int(label))
-
-    def reset(self):
-        """Reset DataSet"""
-        self.images = list()
-        self.labels = list()
-
-    def __getitem__(self, index):
-        assert index < len(self.labels)
-        try:
-            image = read_image(os.path.join(self.base_dir, self.images[index]))
-            image = image.to(torch.float32)
-            if self.item_transform is not None:
-                for t in self.item_transform:
-                    image = t(image)
-            label = torch.tensor(self.labels[index], dtype=torch.long)
-        except:
-            logger.error(f"Get error when read item {index} in {self.file}")
-            raise RuntimeError()
-        return image, label
-
-    def __len__(self):
-        return len(self.labels)
-
-
-class Net(nn.Module):
-    """LeNet5"""
-
-    def __init__(self):
-        super(Net, self).__init__()
-        self.conv1 = nn.Conv2d(3, 32, (5, 5))
-        self.conv2 = nn.Conv2d(32, 24, (7, 7), padding=1)
-        self.pool1 = nn.MaxPool2d((2, 2))
-        self.conv3 = nn.Conv2d(24, 8, (5, 5), padding=1)
-        self.pool2 = nn.MaxPool2d((2, 2))
-        self.linear1 = nn.Linear(8 * 5 * 5, 120)
-        self.linear2 = nn.Linear(120, 84)
-        self.linear3 = nn.Linear(84, 10)
-
-    def forward(self, x):
-        """Forward function"""
-        x = F.relu(self.conv1(x))
-        x = F.relu(self.conv2(x))
-        x = self.pool2(x)
-        x = F.relu(self.conv3(x))
-        x = self.pool2(x).view(-1, 8 * 5 * 5)
-        x = F.relu(self.linear1(x))
-        x = F.relu(self.linear2(x))
-        x = self.linear3(x)
-        return x
+class Runner:
+    def __init__(self, config):
+        self.task = config.task
+        self.model = getattr(task, config.task, None)
+        if self.model is None:
+            raise ValueError(f"task {config.task} is not supported!")
 
 
 def train(model, config, train_dataset, eval_dataset):
