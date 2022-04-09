@@ -28,8 +28,8 @@
 # 必须填写
 --task                   # 训练所选择的task
 --data_root		# 数据集文件夹
---do_train		# 进行训练，默认为True
---do_predict	# 进行预测推理，默认为False
+--do_train      # 进行训练，默认为True
+--do_predict            # 进行预测推理，默认为False
 
 # 建议修改
 --lr			# 学习率，默认为0.00005
