@@ -11,7 +11,12 @@ class Config:
         self.parser = argparse.ArgumentParser(
             description="Model hyper parameters and configs"
         )
-
+        self.parser.add_argument(
+            "--do_train", action="store_true", default=True, help="do training loop"
+        )
+        self.parser.add_argument(
+            "--do_predict", action="store_true", default=False, help="do prediction"
+        )
         self.parser.add_argument(
             "--data_root",
             type=str,
@@ -23,6 +28,9 @@ class Config:
             type=str,
             default="Checkpoints/",
             help="path to load/stroe checkpoints",
+        )
+        self.parser.add_argument(
+            "--max_checkpoints", type=int, default=3, help="max num of checkpoints"
         )
         self.parser.add_argument(
             "--init_checkpoint",
@@ -62,22 +70,18 @@ class Config:
             "--max_train_step", type=int, default=None, help="max step of training loop"
         )
         self.parser.add_argument(
-            "--model_name", type=str, default=None, help="name of trained model"
-        )
-        self.parser.add_argument(
             "--task", type=str, default="ImageClassify", help="task name of training"
         )
         self.parser.add_argument(
-            "--config_file", type=str, default=None, help="parser config from file"
+            "--config", type=str, default=None, help="parser config from file"
         )
-        self.parser.add_argument("--export_result", action="store_true", default=False)
-
+        self.parser.add_argument("--tensorboard", action="store_true", default=False)
         self.args = self.parser.parse_args()
         self.default = vars(self.parser.parse_args([]))
         self._check_args()
 
     def _load_config_file(self):
-        with open(self.args.config_file, mode="r") as f:
+        with open(self.args.config, mode="r") as f:
             config = yaml.safe_load(f)
         for key in config:
             if key not in self.default:
@@ -91,9 +95,9 @@ class Config:
         args = self.args
 
         default_config = None
-        if args.config_file is not None:
-            if not os.path.isfile(args.config_file):
-                raise ValueError(f"config file {args.config_file} is not avaliable!")
+        if args.config is not None:
+            if not os.path.isfile(args.config):
+                raise ValueError(f"config file {args.config} is not avaliable!")
             default_config = self._load_config_file()
 
         if default_config is not None:
@@ -103,6 +107,15 @@ class Config:
 
         if not os.path.isdir(args.data_root):
             raise ValueError(f"data root {args.data_root} is not avaliable!")
+
+        if args.init_checkpoint is not None:
+            if not os.path.isdir(args.init_checkpoint) and not os.path.isfile(
+                args.init_checkpoint
+            ):
+                raise ValueError(
+                    f"init checkpoint {args.init_checkpoint} is not avaliable!"
+                )
+
         if not os.path.isdir(args.checkpoint_path):
             os.makedirs(args.checkpoint_path)
             logger.warning(
