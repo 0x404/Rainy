@@ -48,7 +48,7 @@
 --max_checkpoints	# 最多保存的断点数量，默认为3
 --log_every_n_step	# 每隔多少步输出log信息，默认200step
 --save_ckpt_n_step	# 每隔多少步做一次validation，保存断点，默认2000
---config            # 从config文件中读取配置
+--config                # 从config文件中读取配置
 
 ```
 
