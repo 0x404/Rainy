@@ -52,7 +52,19 @@
 
 ```
 
+## Docker
 
+创建镜像：
+
+```shell
+docker build --file docker/Dockerfile -t rainy:1.0 .
+```
+
+创建容器，在容器内训练：
+
+```shell
+docker run -it --name rainy rainy:1.0
+```
 
 ## TODO
 
