@@ -8,7 +8,7 @@
   python3 launch.py --task ImageClassify --data_root Dataset/ --checkpoint_path Checkpoints/ImageClassify/
   ```
 
-* 支持从config文件训练（目前仅支持yaml）
+* 支持从config文件训练（目前仅支持yaml），配置文件参考configs/ImageClassify.yaml
 
   ```shell
   python3 launch.py --config configs/ImageClassify.yaml
@@ -60,4 +60,4 @@
 - [ ] 支持多卡训练
 - [ ] 添加单元测试，CI集成
 - [ ] 丰富模型，边学习边实践
-- [ ] 保存断点重购，更灵活
+- [ ] 保存断点重构，更灵活
