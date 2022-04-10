@@ -129,13 +129,6 @@ class Config:
                 f"checkpoint path {args.checkpoint_path} is not exists, create automatically!"
             )
 
-        if args.init_checkpoint is not None and not os.path.isfile(
-            args.init_checkpoint
-        ):
-            raise ValueError(
-                f"init checkpoint {args.init_checkpoint} is not avaliable!"
-            )
-
         if args.train_batch_size <= 0:
             raise ValueError(
                 f"train batch size {args.train_batch_size} is supposed to be bigger than 0!"

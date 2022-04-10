@@ -34,6 +34,8 @@ class Saver:
                     f"delete checkpoint {self.metric[v]}, remain checkpoint : {len(self.metric) - 1}"
                 )
                 del self.metric[v]
+        else:
+            logger.info(f"detected {len(files)} checkpoints in checkpoint {save_path}")
 
     def _save(self, save_path):
         """Save model to save path"""
@@ -65,6 +67,7 @@ class Saver:
         else:
             min_acc = min(self.metric.keys())
             if min_acc >= accuracy:
+                logger.info(f"current accuracy {accuracy}, skiped!")
                 return
             shutil.rmtree(self.metric[min_acc])
             del self.metric[min_acc]
@@ -103,7 +106,7 @@ class Saver:
         if os.path.isdir(file_path):
             files = os.listdir(file_path)
             for file in files:
-                if file.endswith(".pth") or file.endswith(".model"):
+                if file.endswith(".pth"):
                     self.resume_from_file(os.path.join(file_path, file))
                     return
             raise RuntimeError(f"resume file {file_path} not avaliable!")
