@@ -1,0 +1,6 @@
+Dataset/
+minist_dataset/
+runlog.log
+**/__pycache__
+.git/
+
