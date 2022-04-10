@@ -22,6 +22,8 @@ class Runner:
         self.valid_dataset = self.task.valid_dataset
         self.pred_dataset = self.task.pred_dataset
         self.model_saver = Saver(self.model, config)
+        self.device = torch.device('cuda' if config.gpu is not None else 'cpu')
+        logger.info(f"training on {self.device}")
         if config.init_checkpoint is not None:
             self.model_saver.resume_from_file(config.init_checkpoint)
         self.writer = None
@@ -61,6 +63,8 @@ class Runner:
         for epoch in range(config.epochs):
             for step, batch_data in enumerate(train_loader):
                 inputs, labels = batch_data
+                inputs = inputs.to(self.device)
+                labels = labels.to(self.device)
                 if epoch == 0 and step == 0:
                     logger.info(f"Input Shape: {inputs.shape}")
                     logger.info(f"Input Dtype: {inputs.dtype}")
@@ -131,6 +135,8 @@ class Runner:
         with torch.no_grad():
             for _, batch_data in enumerate(tqdm(eval_loader, desc=eval_type)):
                 inputs, labels = batch_data
+                inputs = inputs.to(self.device)
+                labels = labels.to(self.device)
                 outputs = self.model(inputs)
                 _, pred = torch.max(outputs, dim=1)
                 batch_size = pred.shape[0]
@@ -155,6 +161,7 @@ class Runner:
         with torch.no_grad():
             for data in tqdm(pred_loader, desc="test"):
                 input, _ = data
+                input = input.to(self.device)
                 output = self.model(input)
                 _, pred = torch.max(output, dim=1)
                 predictions.append(pred.item())
