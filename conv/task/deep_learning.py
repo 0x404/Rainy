@@ -2,7 +2,7 @@ import os
 import torch
 from torch import optim
 from model import MinistClassfier, LeNet5
-from dataset import CifarDataset
+from dataset import CifarDataset, MinistDataset
 import torchvision.transforms as transforms
 
 
@@ -11,6 +11,25 @@ class MinistClassify:
         self.model = MinistClassfier()
         self.optimizer = optim.SGD(self.model.parameters(), config.lr)
         self.loss_function = torch.nn.CrossEntropyLoss()
+        self.train_dataset = MinistDataset(
+            "train",
+            img_dir=os.path.join(config.data_root, "train", "images"),
+            label_dir=os.path.join(config.data_root, "train", "labels_train.txt"),
+            item_trans=lambda x: torch.tensor(x.flatten(), dtype=torch.float32),
+            label_trans=lambda x: torch.tensor(x, dtype=torch.long),
+        )
+        self.valid_dataset = MinistDataset(
+            "val",
+            img_dir=os.path.join(config.data_root, "val", "images"),
+            label_dir=os.path.join(config.data_root, "val", "labels_val.txt"),
+            item_trans=lambda x: torch.tensor(x.flatten(), dtype=torch.float32),
+            label_trans=lambda x: torch.tensor(x, dtype=torch.long),
+        )
+        self.pred_dataset = MinistDataset(
+            "test",
+            img_dir=os.path.join(config.data_root, "test", "images"),
+            item_trans=lambda x: torch.tensor(x.flatten(), dtype=torch.float32),
+        )
 
 
 class ImageClassify:

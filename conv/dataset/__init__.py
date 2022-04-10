@@ -1,3 +1,5 @@
-from .deep_learning import CifarDataset
+from .CifarDataset import CifarDataset
+from .MinistDataset import MinistDataset
 
-__all__ = ["CifarDataset"]
+
+__all__ = ["CifarDataset", "MinistDataset"]
