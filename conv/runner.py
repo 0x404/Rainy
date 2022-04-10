@@ -1,3 +1,4 @@
+"""runner for training loop"""
 import torch
 import task
 from utils import get_logger, Saver
@@ -28,6 +29,11 @@ class Runner:
             self.writer = SummaryWriter()
 
     def train(self):
+        """Do training loop.
+
+        The Runner fetch model, optimizer and loos_function from task config,
+        and do the training loop, evaluation, logging and summary write.
+        """
         config = self.config
         train_loader = DataLoader(
             self.train_dataset, batch_size=self.config.train_batch_size, shuffle=True
@@ -105,6 +111,14 @@ class Runner:
                 lr_scheduler.step()
 
     def eval(self, is_training=False):
+        """Evaluation
+
+        Args:
+            is_training (bool, optional): whther is training. Defaults to False.
+
+        Returns:
+            float: the accuracy of this evaluation.
+        """
         eval_loader = DataLoader(
             self.valid_dataset, batch_size=self.config.eval_batch_size
         )
@@ -115,7 +129,7 @@ class Runner:
         total = 0
         correct = 0
         with torch.no_grad():
-            for _, batch_data in enumerate(tqdm(eval_loader)):
+            for _, batch_data in enumerate(tqdm(eval_loader, desc=eval_type)):
                 inputs, labels = batch_data
                 outputs = self.model(inputs)
                 _, pred = torch.max(outputs, dim=1)
@@ -129,5 +143,21 @@ class Runner:
         return accuracy
 
     def predict(self):
+        """Do prediction.
+
+        Load best model from checkpoint and do evaluation,
+        then run the test dataset and write predictions to `predict_path`.
+        """
         self.model_saver.load_best_model()
         self.eval()
+        pred_loader = DataLoader(self.pred_dataset, batch_size=1)
+        predictions = list()
+        with torch.no_grad():
+            for data in tqdm(pred_loader, desc="test"):
+                input, _ = data
+                output = self.model(input)
+                _, pred = torch.max(output, dim=1)
+                predictions.append(pred.item())
+        with open(self.config.predict_path, mode="w") as f:
+            for pred in predictions:
+                f.write(f"{pred}\n")

@@ -8,12 +8,13 @@ logger = logging.getLogger("Saver")
 
 class Saver:
     """Model Saver, Managing saving and loading of models"""
+
     def __init__(self, model, config):
         self.config = config
         self.model = model
         self.metric = dict()
         self._init_metric()
-    
+
     def _init_metric(self):
         """init metric from checkpoint path"""
         save_path = self.config.checkpoint_path
@@ -23,13 +24,17 @@ class Saver:
         for file in files:
             self.metric[float(file[:6])] = os.path.join(save_path, file)
         if len(files) > max_ckpts:
-            logger.error(f"checkpoint path {save_path}, detected {len(files)} checkpoints, but max checkpoints is {max_ckpts}")
+            logger.error(
+                f"checkpoint path {save_path}, detected {len(files)} checkpoints, but max checkpoints is {max_ckpts}"
+            )
             value = sorted(self.metric.keys())
-            for v in value[:len(files) - max_ckpts]:
+            for v in value[: len(files) - max_ckpts]:
                 shutil.rmtree(self.metric[v])
-                logger.error(f"delete checkpoint {self.metric[v]}, remain checkpoint : {len(self.metric) - 1}")
+                logger.error(
+                    f"delete checkpoint {self.metric[v]}, remain checkpoint : {len(self.metric) - 1}"
+                )
                 del self.metric[v]
-        
+
     def _save(self, save_path):
         """Save model to save path"""
         os.makedirs(save_path)

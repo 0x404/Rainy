@@ -18,6 +18,12 @@ class Config:
             "--do_predict", action="store_true", default=False, help="do prediction"
         )
         self.parser.add_argument(
+            "--predict_path",
+            type=str,
+            default="predictions.txt",
+            help="prediction result path",
+        )
+        self.parser.add_argument(
             "--data_root",
             type=str,
             default="Data/",
@@ -81,6 +87,7 @@ class Config:
         self._check_args()
 
     def _load_config_file(self):
+        """load config from file"""
         with open(self.args.config, mode="r") as f:
             config = yaml.safe_load(f)
         for key in config:
@@ -92,8 +99,8 @@ class Config:
         return config
 
     def _check_args(self):
+        """Check arguments' behavior is legal"""
         args = self.args
-
         default_config = None
         if args.config is not None:
             if not os.path.isfile(args.config):
