@@ -2,7 +2,7 @@
 
 ## 使用说明
 
-* 支持命令行训练
+* 支持参数命令训练
 
   ```shell
   python3 launch.py --task ImageClassify --data_root Dataset/ --checkpoint_path Checkpoints/ImageClassify/
@@ -14,7 +14,7 @@
   python3 launch.py --config configs/ImageClassify.yaml
   ```
 
-* 同时支持以文件为主，参数微调
+* 支持以配置文件为主，参数微调
 
   ```shell
   python3 launch.py --config configs/ImageClassify.yaml --max_train_step 50000
