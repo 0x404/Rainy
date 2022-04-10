@@ -61,6 +61,9 @@ class Saver:
         """
         save_name = f"{accuracy:.4f}-{self.config.task}"
         save_path = os.path.join(self.config.checkpoint_path, save_name)
+        if accuracy in self.metric:
+            logger.info(f"current accuracy {accuracy} has been recorded, skiped!")
+            return
         if len(self.metric) < self.config.max_checkpoints:
             self.metric[accuracy] = save_path
             self._save(save_path)

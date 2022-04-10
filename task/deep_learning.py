@@ -9,6 +9,8 @@ import torchvision.transforms as transforms
 class MinistClassify:
     def __init__(self, config):
         self.model = MinistClassfier()
+        device = torch.device("cuda" if config.gpu is not None else "cpu")
+        self.model.to(device)
         self.optimizer = optim.SGD(self.model.parameters(), config.lr)
         self.loss_function = torch.nn.CrossEntropyLoss()
         self.train_dataset = MinistDataset(
@@ -35,6 +37,8 @@ class MinistClassify:
 class ImageClassify:
     def __init__(self, config):
         self.model = LeNet5()
+        device = torch.device("cuda" if config.gpu is not None else "cpu")
+        self.model.to(device)
         self.optimizer = optim.Adam(self.model.parameters(), config.lr)
         self.loss_function = torch.nn.CrossEntropyLoss()
         self.train_dataset = CifarDataset(

@@ -1,6 +1,7 @@
 import os
 import yaml
 import argparse
+import torch
 from utils import get_logger
 
 logger = get_logger("Config")
@@ -82,6 +83,8 @@ class Config:
             "--config", type=str, default=None, help="parser config from file"
         )
         self.parser.add_argument("--tensorboard", action="store_true", default=False)
+        self.parser.add_argument("--cpu", action="store_true", default=None)
+        self.parser.add_argument("--gpu", action="store_true", default=None)
         self.args = self.parser.parse_args()
         self.default = vars(self.parser.parse_args([]))
         self._check_args()
@@ -111,6 +114,17 @@ class Config:
             for key, val in default_config.items():
                 if getattr(args, key) == self.default.get(key):
                     setattr(args, key, val)
+
+        if args.gpu is not None:
+            if not torch.cuda.is_available():
+                logger.error("GPU not suppoted by your machine!")
+                raise RuntimeError()
+            if args.cpu is not None:
+                logger.error("GPU and CPU are opened both! switched to GPU")
+                args.cpu = None
+
+        if args.gpu is None and args.cpu is None:
+            args.cpu = True
 
         if not os.path.isdir(args.data_root):
             raise ValueError(f"data root {args.data_root} is not avaliable!")
