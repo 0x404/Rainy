@@ -68,8 +68,7 @@ docker run -it --name rainy rainy:1.0
 
 ## TODO
 
-- [ ] 灵活支持GPU，CPU
+- [-] 灵活支持GPU，CPU
 - [ ] 支持多卡训练
 - [ ] 添加单元测试，CI集成
 - [ ] 丰富模型，边学习边实践
-- [ ] 保存断点重构，更灵活
