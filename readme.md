@@ -36,7 +36,7 @@ pip3 install -r docker/requirements.txt
 
 ```shell
 # 必须填写
---task                   # 训练所选择的task
+--task                  # 训练所选择的task
 --data_root		# 数据集文件夹，支持本地和远程
 --do_train              # 进行训练，默认为True
 --do_predict            # 进行预测推理，默认为False
@@ -53,8 +53,8 @@ pip3 install -r docker/requirements.txt
 --max_train_step	# 最多训练的步数，默认为None，由epoch和数据集决定
 --tensorboard		# 使用tensorboard，默认输出为当前目录下runs/
 --init_checkpoint	# 从指定文件夹或者文件初始化模型，默认为None
---cpu               # 使用cpu进行训练，默认如果有gpu则用gpu
---gpu               # 使用gpu进行训练，默认如果有gpu则用gpu
+--cpu                 # 使用cpu进行训练，默认如果有gpu则用gpu
+--gpu                 # 使用gpu进行训练，默认如果有gpu则用gpu
 
 # 建议保持不变
 --max_checkpoints	# 最多保存的断点数量，默认为3
