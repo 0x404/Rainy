@@ -4,3 +4,4 @@ tensorboard-data-server==0.6.1
 tensorboard-plugin-wit==1.8.1
 imageio==2.16.1
 wget==3.2
+PyYAML==5.3.1

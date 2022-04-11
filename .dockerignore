@@ -1,5 +1,4 @@
-Dataset/
-minist_dataset/
+remote-data/
 runlog.log
 **/__pycache__
 .git/
