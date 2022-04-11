@@ -22,7 +22,7 @@ class Runner:
         self.valid_dataset = self.task.valid_dataset
         self.pred_dataset = self.task.pred_dataset
         self.model_saver = Saver(self.model, config)
-        self.device = torch.device('cuda' if config.gpu is not None else 'cpu')
+        self.device = torch.device("cuda" if config.gpu is not None else "cpu")
         logger.info(f"training on {self.device}")
         if config.init_checkpoint is not None:
             self.model_saver.resume_from_file(config.init_checkpoint)

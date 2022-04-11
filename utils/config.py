@@ -3,6 +3,7 @@ import yaml
 import argparse
 import torch
 from utils import get_logger
+from utils.oss import download, is_downloaded, filename_from_url
 
 logger = get_logger("Config")
 
@@ -101,6 +102,33 @@ class Config:
                 config[key] = val
         return config
 
+    def check_data_root(self):
+        """Check data root, If it's a remote url, download to local"""
+        args = self.args
+        local_dir = "remote-data/"
+        local_path = os.path.join(
+            os.getcwd(), local_dir, filename_from_url(args.data_root)
+        )
+        if args.data_root.startswith("http://"):
+            try:
+                logger.info(f"fetching {args.data_root} to local remote-data/ ...")
+                if is_downloaded(args.data_root, local_dir):
+                    logger.info(f"{local_path} exists!")
+                else:
+                    download(args.data_root, local_dir)
+                logger.info(f"fetching {args.data_root} succeed!")
+                args.data_root = local_path
+            except Exception:
+                logger.error(f"fetching {args.data_root} failed!")
+                raise RuntimeError("fetching file failed")
+
+        if not os.path.isdir(args.data_root):
+            if os.path.isfile(args.data_root):
+                raise ValueError(
+                    f"data root {args.data_root} is a file, not a directory!"
+                )
+            raise ValueError(f"data root {args.data_root} is not avaliable!")
+
     def _check_args(self):
         """Check arguments' behavior is legal"""
         args = self.args
@@ -115,6 +143,7 @@ class Config:
                 if getattr(args, key) == self.default.get(key):
                     setattr(args, key, val)
 
+        self.check_data_root()
         if args.gpu is not None:
             if not torch.cuda.is_available():
                 logger.error("GPU not suppoted by your machine!")
@@ -125,9 +154,6 @@ class Config:
 
         if args.gpu is None and args.cpu is None:
             args.cpu = True
-
-        if not os.path.isdir(args.data_root):
-            raise ValueError(f"data root {args.data_root} is not avaliable!")
 
         if args.init_checkpoint is not None:
             if not os.path.isdir(args.init_checkpoint) and not os.path.isfile(

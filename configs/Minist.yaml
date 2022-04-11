@@ -1,6 +1,6 @@
 do_train: True
 do_predict: True
-data_root: 'minist_dataset/'
+data_root: http://data-rainy.oss-cn-beijing.aliyuncs.com/data/exp1-data.zip
 checkpoint_path: 'Checkpoints/Minist/'
 max_checkpoints: 3
 lr: 0.0005

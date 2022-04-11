@@ -1,7 +1,6 @@
 **/__pycache__
-Dataset
-minist_dataset
 runlog.log
 Checkpoints/
 runs/
 prediction.txt
+remote-data/
