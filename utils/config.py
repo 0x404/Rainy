@@ -102,7 +102,7 @@ class Config:
                 config[key] = val
         return config
 
-    def check_data_root(self):
+    def _check_data_root(self):
         """Check data root, If it's a remote url, download to local"""
         args = self.args
         local_dir = "remote-data/"
@@ -129,21 +129,9 @@ class Config:
                 )
             raise ValueError(f"data root {args.data_root} is not avaliable!")
 
-    def _check_args(self):
-        """Check arguments' behavior is legal"""
+    def _check_gpu(self):
+        """check gpu option, switched to correct option"""
         args = self.args
-        default_config = None
-        if args.config is not None:
-            if not os.path.isfile(args.config):
-                raise ValueError(f"config file {args.config} is not avaliable!")
-            default_config = self._load_config_file()
-
-        if default_config is not None:
-            for key, val in default_config.items():
-                if getattr(args, key) == self.default.get(key):
-                    setattr(args, key, val)
-
-        self.check_data_root()
         if args.gpu is not None:
             if not torch.cuda.is_available():
                 logger.error("GPU not suppoted by your machine!")
@@ -155,6 +143,13 @@ class Config:
         if args.gpu is None and args.cpu is None:
             args.cpu = True
 
+    def _check_checkpoint(self):
+        """Check checkpoint option
+        
+        If checkpoint dir not exist, create automatically.
+        # TODO : support remote checkpoint dir
+        """
+        args = self.args
         if args.init_checkpoint is not None:
             if not os.path.isdir(args.init_checkpoint) and not os.path.isfile(
                 args.init_checkpoint
@@ -169,6 +164,24 @@ class Config:
                 f"checkpoint path {args.checkpoint_path} is not exists, create automatically!"
             )
 
+    def _check_args(self):
+        """Check arguments' behavior is legal"""
+        args = self.args
+
+        if args.config is not None:
+            # set args from config file
+            if not os.path.isfile(args.config):
+                raise ValueError(f"config file {args.config} is not avaliable!")
+            default_config = self._load_config_file()
+            for key, val in default_config.items():
+                if getattr(args, key) == self.default.get(key):
+                    setattr(args, key, val)
+
+        self._check_data_root()
+        self._check_gpu()
+        self._check_checkpoint()
+
+        # check numel option
         if args.train_batch_size <= 0:
             raise ValueError(
                 f"train batch size {args.train_batch_size} is supposed to be bigger than 0!"
