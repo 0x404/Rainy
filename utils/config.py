@@ -141,7 +141,10 @@ class Config:
                 args.cpu = None
 
         if args.gpu is None and args.cpu is None:
-            args.cpu = True
+            if torch.cuda.is_available():
+                args.gpu = True
+            else:
+                args.cpu = True
 
     def _check_checkpoint(self):
         """Check checkpoint option
