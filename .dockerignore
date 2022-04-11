@@ -1,4 +1,6 @@
 remote-data/
+Checkpoints/
+runs/
 runlog.log
 **/__pycache__
 .git/
