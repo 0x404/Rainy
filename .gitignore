@@ -2,5 +2,6 @@
 runlog.log
 Checkpoints/
 runs/
+predictions.txt
 prediction.txt
 remote-data/
