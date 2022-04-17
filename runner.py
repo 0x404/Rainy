@@ -21,6 +21,7 @@ class Runner:
         self.train_dataset = self.task.train_dataset
         self.valid_dataset = self.task.valid_dataset
         self.pred_dataset = self.task.pred_dataset
+        self.collate_fn = getattr(self.task, "collate_fn", None)
         self.model_saver = Saver(self.model, config)
         self.device = torch.device("cuda" if config.gpu is not None else "cpu")
         logger.info(f"training on {self.device}")
@@ -38,7 +39,10 @@ class Runner:
         """
         config = self.config
         train_loader = DataLoader(
-            self.train_dataset, batch_size=self.config.train_batch_size, shuffle=True
+            dataset=self.train_dataset,
+            batch_size=self.config.train_batch_size,
+            collate_fn=self.collate_fn,
+            shuffle=True,
         )
         model = self.model
         optimizer = self.task.optimizer
@@ -63,11 +67,18 @@ class Runner:
         for epoch in range(config.epochs):
             for step, batch_data in enumerate(train_loader):
                 inputs, labels = batch_data
-                inputs = inputs.to(self.device)
+                if isinstance(inputs, dict):
+                    for k in inputs:
+                        inputs[k].to(self.device)
+                else:
+                    inputs = inputs.to(self.device)
                 labels = labels.to(self.device)
                 if epoch == 0 and step == 0:
-                    logger.info(f"Input Shape: {inputs.shape}")
-                    logger.info(f"Input Dtype: {inputs.dtype}")
+                    if isinstance(inputs, (dict, list)):
+                        logger.info(f"Input: {inputs}")
+                    else:
+                        logger.info(f"Input Shape: {inputs.shape}")
+                        logger.info(f"Input Dtype: {inputs.dtype}")
                     logger.info(f"Labels Shape: {labels.shape}")
                     logger.info(f"Labels Dtype: {labels.dtype}")
 
@@ -124,7 +135,9 @@ class Runner:
             float: the accuracy of this evaluation.
         """
         eval_loader = DataLoader(
-            self.valid_dataset, batch_size=self.config.eval_batch_size
+            dataset=self.valid_dataset,
+            batch_size=self.config.eval_batch_size,
+            collate_fn=self.collate_fn,
         )
         eval_type = "Evalution" if is_training else "Prediction"
         logger.info(f"********** Running {eval_type} **********")
@@ -135,7 +148,11 @@ class Runner:
         with torch.no_grad():
             for _, batch_data in enumerate(tqdm(eval_loader, desc=eval_type)):
                 inputs, labels = batch_data
-                inputs = inputs.to(self.device)
+                if isinstance(inputs, dict):
+                    for k in inputs:
+                        inputs[k].to(self.device)
+                else:
+                    inputs = inputs.to(self.device)
                 labels = labels.to(self.device)
                 outputs = self.model(inputs)
                 _, pred = torch.max(outputs, dim=1)
@@ -156,12 +173,18 @@ class Runner:
         """
         self.model_saver.load_best_model()
         self.eval()
-        pred_loader = DataLoader(self.pred_dataset, batch_size=1)
+        pred_loader = DataLoader(
+            self.pred_dataset, batch_size=1, collate_fn=self.collate_fn
+        )
         predictions = list()
         with torch.no_grad():
             for data in tqdm(pred_loader, desc="test"):
                 input, _ = data
-                input = input.to(self.device)
+                if isinstance(input, dict):
+                    for k in input:
+                        input[k].to(self.device)
+                else:
+                    input = input.to(self.device)
                 output = self.model(input)
                 _, pred = torch.max(output, dim=1)
                 predictions.append(pred.item())

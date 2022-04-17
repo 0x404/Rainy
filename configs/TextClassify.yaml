@@ -1,0 +1,13 @@
+do_train: True
+do_predict: True
+data_root: http://data-rainy.oss-cn-beijing.aliyuncs.com/data/exp3-data.zip
+checkpoint_path: 'Checkpoints/TextClassify/'
+max_checkpoints: 3
+lr: 0.0005
+train_batch_size: 32
+eval_batch_size: 32
+epochs: 25
+accumulate_step: 1
+log_every_n_step: 200
+save_ckpt_n_step: 2000
+task: 'TextClassify'
