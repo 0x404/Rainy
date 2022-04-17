@@ -6,8 +6,9 @@ max_checkpoints: 3
 lr: 0.0005
 train_batch_size: 32
 eval_batch_size: 32
-epochs: 25
+epochs: 80
 accumulate_step: 1
 log_every_n_step: 200
 save_ckpt_n_step: 2000
 task: 'TextClassify'
+tensorboard: True

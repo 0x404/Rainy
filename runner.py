@@ -1,7 +1,7 @@
 """runner for training loop"""
 import torch
 import task
-from utils import get_logger, Saver
+from utils import get_logger, move_to_device, Saver
 from tqdm import tqdm
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
@@ -11,6 +11,8 @@ logger = get_logger(__name__)
 
 
 class Runner:
+    """Base Runner"""
+
     def __init__(self, config):
         self.config = config
         self.task = getattr(task, config.task, None)
@@ -18,10 +20,6 @@ class Runner:
             raise ValueError(f"task {config.task} is not supported!")
         self.task = self.task(config)
         self.model = self.task.model
-        self.train_dataset = self.task.train_dataset
-        self.valid_dataset = self.task.valid_dataset
-        self.pred_dataset = self.task.pred_dataset
-        self.collate_fn = getattr(self.task, "collate_fn", None)
         self.model_saver = Saver(self.model, config)
         self.device = torch.device("cuda" if config.gpu is not None else "cpu")
         logger.info(f"training on {self.device}")
@@ -39,9 +37,9 @@ class Runner:
         """
         config = self.config
         train_loader = DataLoader(
-            dataset=self.train_dataset,
+            dataset=self.task.train_dataset,
             batch_size=self.config.train_batch_size,
-            collate_fn=self.collate_fn,
+            collate_fn=getattr(self.task, "collate_fn", None),
             shuffle=True,
         )
         model = self.model
@@ -67,12 +65,9 @@ class Runner:
         for epoch in range(config.epochs):
             for step, batch_data in enumerate(train_loader):
                 inputs, labels = batch_data
-                if isinstance(inputs, dict):
-                    for k in inputs:
-                        inputs[k].to(self.device)
-                else:
-                    inputs = inputs.to(self.device)
-                labels = labels.to(self.device)
+                move_to_device(inputs, self.device)
+                move_to_device(labels, self.device)
+
                 if epoch == 0 and step == 0:
                     if isinstance(inputs, (dict, list)):
                         logger.info(f"Input: {inputs}")
@@ -99,8 +94,9 @@ class Runner:
                 ):
                     if completed_step == 0:
                         continue
+                    progress_tag = 100 * completed_step / total_step
                     logger.info(
-                        f"[{100 * completed_step / total_step:.2f}%]\tepoch:{epoch}\tstep:{completed_step}\tloss:{loss.item()}"
+                        f"[{progress_tag:.2f}%]\t epoch:{epoch}\t step:{completed_step}\t loss:{loss.item()}"
                     )
 
                 if completed_step % config.save_ckpt_n_step == 0:
@@ -135,9 +131,9 @@ class Runner:
             float: the accuracy of this evaluation.
         """
         eval_loader = DataLoader(
-            dataset=self.valid_dataset,
+            dataset=self.task.valid_dataset,
             batch_size=self.config.eval_batch_size,
-            collate_fn=self.collate_fn,
+            collate_fn=getattr(self.task, "collate_fn", None),
         )
         eval_type = "Evalution" if is_training else "Prediction"
         logger.info(f"********** Running {eval_type} **********")
@@ -148,12 +144,8 @@ class Runner:
         with torch.no_grad():
             for _, batch_data in enumerate(tqdm(eval_loader, desc=eval_type)):
                 inputs, labels = batch_data
-                if isinstance(inputs, dict):
-                    for k in inputs:
-                        inputs[k].to(self.device)
-                else:
-                    inputs = inputs.to(self.device)
-                labels = labels.to(self.device)
+                move_to_device(inputs, self.device)
+                move_to_device(labels, self.device)
                 outputs = self.model(inputs)
                 _, pred = torch.max(outputs, dim=1)
                 batch_size = pred.shape[0]
@@ -174,17 +166,15 @@ class Runner:
         self.model_saver.load_best_model()
         self.eval()
         pred_loader = DataLoader(
-            self.pred_dataset, batch_size=1, collate_fn=self.collate_fn
+            dataset=self.task.pred_dataset,
+            batch_size=1,
+            collate_fn=getattr(self.task, "collate_fn", None),
         )
         predictions = list()
         with torch.no_grad():
             for data in tqdm(pred_loader, desc="test"):
                 input, _ = data
-                if isinstance(input, dict):
-                    for k in input:
-                        input[k].to(self.device)
-                else:
-                    input = input.to(self.device)
+                move_to_device(input, self.device)
                 output = self.model(input)
                 _, pred = torch.max(output, dim=1)
                 predictions.append(pred.item())

@@ -1,6 +1,6 @@
+import torch
 import torch.nn.functional as F
 from torch import nn
-import torch
 
 
 class MinistClassfier(nn.Module):
@@ -55,22 +55,15 @@ class LeNet5(nn.Module):
 class TextCNN(nn.Module):
     def __init__(self, word_dim, pos_num, pos_dim, word2id):
         super(TextCNN, self).__init__()
-        # pos_num = 190
-        # B * pos_num * D
-        # 1 * pos_num
-        # 1 * pos_num * 3 * D
-
-        self.d = word_dim
         self.word2id = word2id
         self.embedding_word = nn.Embedding(
-            num_embeddings=len(word2id), embedding_dim=self.d
+            num_embeddings=len(word2id), embedding_dim=word_dim
         )
         self.embedding1 = nn.Embedding(num_embeddings=pos_num, embedding_dim=pos_dim)
         self.embedding2 = nn.Embedding(num_embeddings=pos_num, embedding_dim=pos_dim)
-        # B * 1 * 20 * D
-        self.conv1 = nn.Conv2d(1, 1, (2, 2 * pos_dim + self.d))
-        self.conv2 = nn.Conv2d(1, 1, (3, 2 * pos_dim + self.d))
-        self.conv3 = nn.Conv2d(1, 1, (4, 2 * pos_dim + self.d))
+        self.conv1 = nn.Conv2d(1, 1, (2, 2 * pos_dim + word_dim))
+        self.conv2 = nn.Conv2d(1, 1, (3, 2 * pos_dim + word_dim))
+        self.conv3 = nn.Conv2d(1, 1, (4, 2 * pos_dim + word_dim))
         self.maxpool1 = nn.MaxPool2d(((pos_num - 2 + 1) // 3, 1))
         self.maxpool2 = nn.MaxPool2d(((pos_num - 3 + 1) // 3, 1))
         self.maxpool3 = nn.MaxPool2d(((pos_num - 4 + 1) // 3, 1))
@@ -78,33 +71,22 @@ class TextCNN(nn.Module):
         self.dropout = nn.Dropout(0.1)
 
     def forward(self, data):
-        x = self.embedding_word(data["text"])  # B * pos_num * D
-        # print("x.shape", x.shape)
+        """forward"""
+        text = self.embedding_word(data["text"])  # B * pos_num * D
         pos1 = self.embedding1(data["pos1"])  # B * pos_num * pos_dim
-        # print("pos1.shape:", pos1.shape)
         pos2 = self.embedding2(data["pos2"])  # B * pos_num * pos_dim
-        # print("pos2.shape:", pos2.shape)
-        x = torch.cat((x, pos1, pos2), dim=2)  # B * pos_num * (D + 2 * pos_dim)
-        # print("x.shape", x.shape)
-        x = torch.unsqueeze(x, dim=1)  # B * 1 * pos_num * (D + 2 * pos_dim)
-        # print(x.shape)
+        input = torch.cat((text, pos1, pos2), dim=2)  # B * pos_num * (D + 2 * pos_dim)
+        input = torch.unsqueeze(input, dim=1)  # B * 1 * pos_num * (D + 2 * pos_dim)
 
-        x1 = F.relu(self.conv1(x))  # B * 1 * pos_num - 1 * 1
-        # print("x1.shape", x1.shape)
-        x2 = F.relu(self.conv2(x))  # B * 1 * pos_num - 2 * 1
-        # print("x2.shape", x2.shape)
-        x3 = F.relu(self.conv3(x))  # B * 1 * pos_num - 3 * 1
-        # print("x3.shape", x3.shape)
+        state1 = F.relu(self.conv1(input))  # B * 1 * pos_num - 1 * 1
+        state2 = F.relu(self.conv2(input))  # B * 1 * pos_num - 2 * 1
+        state3 = F.relu(self.conv3(input))  # B * 1 * pos_num - 3 * 1
 
-        x1 = self.maxpool1(x1).view(-1, 3)  # B * 1 * 3 * 1 -> B * 3
-        # print("x1.shape", x1.shape)
-        x2 = self.maxpool2(x2).view(-1, 3)  # B * 1 * 3 * 1 -> B * 3
-        # print("x2.shape", x2.shape)
-        x3 = self.maxpool3(x3).view(-1, 3)  # B * 1 * 3 * 1 -> B * 3
-        # print("x3.shape", x3.shape)
+        state1 = self.maxpool1(state1).view(-1, 3)  # B * 1 * 3 * 1 -> B * 3
+        state2 = self.maxpool2(state2).view(-1, 3)  # B * 1 * 3 * 1 -> B * 3
+        state3 = self.maxpool3(state3).view(-1, 3)  # B * 1 * 3 * 1 -> B * 3
 
-        x = torch.cat((x1, x2, x3), dim=1)  # B * 9
-        # print(x.shape)
-        x = self.dropout(x)  # B * 9
-        x = self.linear(x)
-        return x
+        state = torch.cat((state1, state2, state3), dim=1)  # B * 9
+        state = self.dropout(state)  # B * 9
+        output = self.linear(state)
+        return output

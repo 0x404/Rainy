@@ -1,5 +1,6 @@
 import sys
-from .deep_learning import MinistClassify, ImageClassify, TextClassify
+from .deep_learning import MinistClassify, ImageClassify
+from .text_classify import TextClassify
 
 __all__ = ["MinistClassify", "ImageClassify", "TextClassify"]
 
