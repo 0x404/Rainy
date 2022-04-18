@@ -66,7 +66,7 @@ class TextClassify:
 
         device = torch.device("cuda" if config.gpu is not None else "cpu")
         self.model = TextCNN(
-            word_dim=100, pos_num=max_length, pos_dim=1, word2id=word2id
+            word_dim=100, pos_num=max_length, pos_dim=5, word2id=word2id
         )
         self.model.to(device)
         self.optimizer = optim.Adam(self.model.parameters(), config.lr)

@@ -55,38 +55,36 @@ class LeNet5(nn.Module):
 class TextCNN(nn.Module):
     def __init__(self, word_dim, pos_num, pos_dim, word2id):
         super(TextCNN, self).__init__()
-        self.word2id = word2id
-        self.embedding_word = nn.Embedding(
-            num_embeddings=len(word2id), embedding_dim=word_dim
+        self.feature_num = 3
+        self.feature_dim = word_dim + 2 * pos_dim
+        self.kernel_size = [2, 3, 5, 7, 9, 11]
+        self.kernel_num = len(self.kernel_size)
+
+        self.word_embedding = nn.Embedding(len(word2id), embedding_dim=word_dim)
+        self.pos1_embedding = nn.Embedding(pos_num, embedding_dim=pos_dim)
+        self.pos2_embedding = nn.Embedding(pos_num, embedding_dim=pos_dim)
+        self.convs = nn.ModuleList(
+            nn.Conv2d(1, 1, (i, self.feature_dim)) for i in self.kernel_size
         )
-        self.embedding1 = nn.Embedding(num_embeddings=pos_num, embedding_dim=pos_dim)
-        self.embedding2 = nn.Embedding(num_embeddings=pos_num, embedding_dim=pos_dim)
-        self.conv1 = nn.Conv2d(1, 1, (2, 2 * pos_dim + word_dim))
-        self.conv2 = nn.Conv2d(1, 1, (3, 2 * pos_dim + word_dim))
-        self.conv3 = nn.Conv2d(1, 1, (4, 2 * pos_dim + word_dim))
-        self.maxpool1 = nn.MaxPool2d(((pos_num - 2 + 1) // 3, 1))
-        self.maxpool2 = nn.MaxPool2d(((pos_num - 3 + 1) // 3, 1))
-        self.maxpool3 = nn.MaxPool2d(((pos_num - 4 + 1) // 3, 1))
-        self.linear = nn.Linear(9, 44)
-        self.dropout = nn.Dropout(0.1)
+        self.maxpools = nn.ModuleList(
+            nn.MaxPool2d(((pos_num - i + 1) // self.feature_num, 1))
+            for i in self.kernel_size
+        )
+        self.linear = nn.Linear(self.kernel_num * self.feature_num, 44)
+        self.dropout = nn.Dropout(0.3)
 
     def forward(self, data):
         """forward"""
-        text = self.embedding_word(data["text"])  # B * pos_num * D
-        pos1 = self.embedding1(data["pos1"])  # B * pos_num * pos_dim
-        pos2 = self.embedding2(data["pos2"])  # B * pos_num * pos_dim
-        input = torch.cat((text, pos1, pos2), dim=2)  # B * pos_num * (D + 2 * pos_dim)
-        input = torch.unsqueeze(input, dim=1)  # B * 1 * pos_num * (D + 2 * pos_dim)
+        text = self.word_embedding(data["text"])
+        pos1 = self.pos1_embedding(data["pos1"])
+        pos2 = self.pos2_embedding(data["pos2"])
+        input = torch.cat((text, pos1, pos2), dim=2)
+        input = torch.unsqueeze(input, dim=1)
 
-        state1 = F.relu(self.conv1(input))  # B * 1 * pos_num - 1 * 1
-        state2 = F.relu(self.conv2(input))  # B * 1 * pos_num - 2 * 1
-        state3 = F.relu(self.conv3(input))  # B * 1 * pos_num - 3 * 1
-
-        state1 = self.maxpool1(state1).view(-1, 3)  # B * 1 * 3 * 1 -> B * 3
-        state2 = self.maxpool2(state2).view(-1, 3)  # B * 1 * 3 * 1 -> B * 3
-        state3 = self.maxpool3(state3).view(-1, 3)  # B * 1 * 3 * 1 -> B * 3
-
-        state = torch.cat((state1, state2, state3), dim=1)  # B * 9
-        state = self.dropout(state)  # B * 9
-        output = self.linear(state)
+        states = [F.relu(conv(input)) for conv in self.convs]
+        states_pooled = [maxpool(states[i]) for i, maxpool in enumerate(self.maxpools)]
+        states_pooled = [state.view(-1, 3) for state in states_pooled]
+        states_pooled = torch.cat(states_pooled, dim=1)
+        states_pooled = self.dropout(states_pooled)
+        output = self.linear(states_pooled)
         return output
