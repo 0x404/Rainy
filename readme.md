@@ -75,7 +75,7 @@ docker build --file docker/Dockerfile -t rainy .
 创建容器，在容器内训练：
 
 ```shell
-docker run -it --name rainy rainy
+docker run -it --name ml-rainy rainy
 ```
 
 ## TODO
