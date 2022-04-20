@@ -1,8 +1,9 @@
+"""Helper function"""
 import torch
 
 
 def move_to_device(x, device):
-    """Move x to device.
+    """Move x to device recursively.
 
     Args:
         x (dict or list or Tensor): variable to be moved.
@@ -10,15 +11,16 @@ def move_to_device(x, device):
 
     Raises:
         RuntimeError: when x is not a dict or a list or a Tensor.
+
+    Return:
+        dict or list or Tensor on specified device.
     """
     assert isinstance(device, torch.device)
     if isinstance(x, dict):
-        for key in x:
-            move_to_device(x[key], device)
+        return {k : move_to_device(v, device) for k, v in x.items()}
     elif isinstance(x, list):
-        for i in range(len(x)):
-            move_to_device(x[i], device)
+        return [move_to_device(v, device) for v in x]
     elif isinstance(x, torch.Tensor):
-        x.to(device)
+        return x.to(device)
     else:
         raise RuntimeError(f"can not move {type(x)} to {device}")

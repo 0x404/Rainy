@@ -65,8 +65,8 @@ class Runner:
         for epoch in range(config.epochs):
             for step, batch_data in enumerate(train_loader):
                 inputs, labels = batch_data
-                move_to_device(inputs, self.device)
-                move_to_device(labels, self.device)
+                inputs = move_to_device(inputs, self.device)
+                labels = move_to_device(labels, self.device)
 
                 if epoch == 0 and step == 0:
                     if isinstance(inputs, (dict, list)):
@@ -144,8 +144,8 @@ class Runner:
         with torch.no_grad():
             for _, batch_data in enumerate(tqdm(eval_loader, desc=eval_type)):
                 inputs, labels = batch_data
-                move_to_device(inputs, self.device)
-                move_to_device(labels, self.device)
+                inputs = move_to_device(inputs, self.device)
+                labels = move_to_device(labels, self.device)
                 outputs = self.model(inputs)
                 _, pred = torch.max(outputs, dim=1)
                 batch_size = pred.shape[0]
@@ -174,7 +174,7 @@ class Runner:
         with torch.no_grad():
             for data in tqdm(pred_loader, desc="test"):
                 input, _ = data
-                move_to_device(input, self.device)
+                input = move_to_device(input, self.device)
                 output = self.model(input)
                 _, pred = torch.max(output, dim=1)
                 predictions.append(pred.item())
