@@ -69,13 +69,13 @@ pip3 install -r docker/requirements.txt
 创建镜像：
 
 ```shell
-docker build --file docker/Dockerfile -t rainy:1.0 .
+docker build --file docker/Dockerfile -t rainy .
 ```
 
 创建容器，在容器内训练：
 
 ```shell
-docker run -it --name rainy rainy:1.0
+docker run -it --name rainy rainy
 ```
 
 ## TODO
