@@ -1,3 +1,4 @@
+"""DataSet for Cifar task"""
 import os
 import logging
 import torch
@@ -9,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 class CifarDataset(Dataset):
     """DataSet for Cifar task.
-    
+
     Args:
         file: data file path.
         data_base_dir: directory of images.
@@ -27,16 +28,16 @@ class CifarDataset(Dataset):
         self.base_dir = data_base_dir
         self.get_label = get_label
         self.file = file
-        self.images = list()
-        self.labels = list()
+        self.images = []
+        self.labels = []
         self.from_file(file)
 
     def from_file(self, file):
         """Construct DataSet from file"""
         self.reset()
         self.file = file
-        with open(file, mode="r") as f:
-            for line in f:
+        with open(file, mode="r") as file:
+            for line in file:
                 line = line.strip("\n")
                 if len(line.split(" ")) == 2:
                     image, label = line.split(" ")
@@ -51,8 +52,8 @@ class CifarDataset(Dataset):
 
     def reset(self):
         """Reset DataSet"""
-        self.images = list()
-        self.labels = list()
+        self.images = []
+        self.labels = []
 
     def __getitem__(self, index):
         assert index < len(self.labels)

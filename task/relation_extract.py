@@ -1,30 +1,31 @@
+"""Task for text relation extraction"""
+# pylint: disable=too-few-public-methods
 import os
 import torch
+from torch import optim
 from model import TextCNN
 from dataset import TextDataset
-from dataset.TextDataset import tokenizer, get_word2id, get_relation, get_max_length
-from torch import optim
+from dataset.text_dataset import tokenizer, get_word2id, get_relation, get_max_length
 
 
 def collate_fn(batch):
+    """collate fuction for this task"""
     data = [item[0] for item in batch]
     labels = [item[1] for item in batch]
+    inputs = {k: [] for k in data[0]}
     if labels[0] != "<unkonwn>":
         labels = torch.LongTensor(labels)
-    inputs = dict()
-    for k in data[0]:
-        inputs[k] = list()
     for item in data:
         for k in item:
             inputs[k].append(item[k])
-    for k in inputs:
-        inputs[k] = torch.LongTensor(inputs[k])
+    inputs = {k: torch.LongTensor(tensor) for k, tensor in inputs.items()}
     return [inputs, labels]
 
 
-class TextClassify:
-    def __init__(self, config):
+class RelationExtract:
+    """Relation Extract"""
 
+    def __init__(self, config):
         word2id = get_word2id(
             [
                 os.path.join(config.data_root, "data_train.txt"),

@@ -1,7 +1,7 @@
 do_train: True
 do_predict: True
 data_root: http://data-rainy.oss-cn-beijing.aliyuncs.com/data/exp3-data.zip
-checkpoint_path: 'Checkpoints/TextClassify/'
+checkpoint_path: 'Checkpoints/RelationExtract/'
 max_checkpoints: 3
 lr: 0.0005
 train_batch_size: 32
@@ -10,5 +10,5 @@ epochs: 80
 accumulate_step: 1
 log_every_n_step: 200
 save_ckpt_n_step: 2000
-task: 'TextClassify'
+task: 'RelationExtract'
 tensorboard: True

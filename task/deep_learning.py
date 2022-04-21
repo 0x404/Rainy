@@ -1,12 +1,17 @@
+"""Task for deeplearning"""
+# pylint: disable=no-member
+# pylint: disable=too-few-public-methods
 import os
 import torch
 from torch import optim
+from torchvision import transforms
 from model import MinistClassfier, LeNet5
 from dataset import CifarDataset, MinistDataset
-import torchvision.transforms as transforms
 
 
 class MinistClassify:
+    """Task for minist classify"""
+
     def __init__(self, config):
         self.model = MinistClassfier()
         device = torch.device("cuda" if config.gpu is not None else "cpu")
@@ -35,6 +40,8 @@ class MinistClassify:
 
 
 class ImageClassify:
+    """Task for image classify"""
+
     def __init__(self, config):
         self.model = LeNet5()
         device = torch.device("cuda" if config.gpu is not None else "cpu")

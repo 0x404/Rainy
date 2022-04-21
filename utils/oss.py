@@ -1,5 +1,5 @@
 """Manage data download and upload"""
-#pylint: disable=logging-fstring-interpolation
+# pylint: disable=logging-fstring-interpolation
 import os
 import logging
 import zipfile

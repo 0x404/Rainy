@@ -1,8 +1,9 @@
+"""All task"""
 import sys
 from .deep_learning import MinistClassify, ImageClassify
-from .text_classify import TextClassify
+from .relation_extract import RelationExtract
 
-__all__ = ["MinistClassify", "ImageClassify", "TextClassify"]
+__all__ = ["MinistClassify", "ImageClassify", "RelationExtract"]
 
 thismodule = sys.modules[__name__]
 required_attribute = ["model", "optimizer", "loss_function"]

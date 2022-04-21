@@ -1,9 +1,12 @@
+"""Dataset for minist"""
 import os
 from imageio import imread
 from torch.utils.data import Dataset
 
 
 class MinistDataset(Dataset):
+    """Dataset for minist"""
+
     def __init__(
         self, mode, img_dir, label_dir=None, item_trans=None, label_trans=None
     ):
@@ -19,8 +22,8 @@ class MinistDataset(Dataset):
 
     def _load_lables(self):
         self.lables = []
-        with open(self.label_dir, mode="r") as f:
-            for _, label in enumerate(f):
+        with open(self.label_dir, mode="r") as file:
+            for _, label in enumerate(file):
                 self.lables.append(int(label))
 
     def __len__(self):

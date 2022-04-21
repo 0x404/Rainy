@@ -1,5 +1,5 @@
 """runner for training loop"""
-#pylint: disable=logging-fstring-interpolation
+# pylint: disable=logging-fstring-interpolation
 import torch
 from tqdm import tqdm
 from torch.utils.tensorboard import SummaryWriter
@@ -178,6 +178,6 @@ class Runner:
                 outputs = self.model(inputs)
                 _, pred = torch.max(outputs, dim=1)
                 predictions.append(pred.item())
-        with open(self.config.predict_path, mode="w", encoding='utf-8') as file:
+        with open(self.config.predict_path, mode="w", encoding="utf-8") as file:
             for pred in predictions:
                 file.write(f"{pred}\n")

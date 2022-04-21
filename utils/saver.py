@@ -1,6 +1,6 @@
 """Model saver"""
-#pylint: disable=consider-using-f-string
-#pylint: disable=logging-fstring-interpolation
+# pylint: disable=consider-using-f-string
+# pylint: disable=logging-fstring-interpolation
 import os
 import shutil
 import logging
@@ -42,7 +42,9 @@ class Saver:
                 )
                 del self.metric[key_to_del]
         else:
-            logger.info("detected {} checkpoints in checkpoint {}".format(len(files), save_path))
+            logger.info(
+                "detected {} checkpoints in checkpoint {}".format(len(files), save_path)
+            )
 
     def _save(self, save_path):
         """Save model to save path"""

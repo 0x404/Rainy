@@ -1,20 +1,30 @@
-import os
-import jieba
+"""Dataset for relation extraction"""
 import json
+import jieba
 from torch.utils.data import Dataset
 
 
 def tokenizer(text):
+    """A simple tokenizer from jiebba"""
     return list(jieba.cut(text))
 
 
 def get_word2id(file_paths):
+    """Get word2id dict
+
+    Args:
+        file_paths (Str or list[Str]): all paths.
+
+    Returns:
+        Dict: which key is word in all file paths,
+              and value is id of word.
+    """
     word2id = {"<unkonwn>": 0}
     if isinstance(file_paths, str):
         file_paths = [file_paths]
     for file_path in file_paths:
-        with open(file_path, mode="r", encoding="utf-8") as f:
-            for line in f:
+        with open(file_path, mode="r", encoding="utf-8") as file:
+            for line in file:
                 line = line.strip()
                 line = line.strip("\n")
                 line = line.split("\t")
@@ -27,6 +37,14 @@ def get_word2id(file_paths):
 
 
 def get_max_length(file_paths):
+    """Get max sentence length in given files.
+
+    Args:
+        file_paths (Str or List[Str]): all file paths.
+
+    Returns:
+        Int: max sentence length.
+    """
     if isinstance(file_paths, str):
         file_paths = [file_paths]
     max_length = 0
@@ -43,12 +61,22 @@ def get_max_length(file_paths):
 
 
 def get_relation(json_path):
-    with open(json_path, mode="r", encoding="utf-8") as f:
-        relation = json.load(f)
+    """Load relation dict.
+
+    Args:
+        json_path (Str): path of json file.
+
+    Returns:
+        Dict: dict from json.
+    """
+    with open(json_path, mode="r", encoding="utf-8") as file:
+        relation = json.load(file)
     return relation
 
 
 class TextDataset(Dataset):
+    """Text dataset"""
+
     def __init__(
         self, file_path, tokenizer, word2id, relation, max_sent, is_test=False
     ):
@@ -58,8 +86,8 @@ class TextDataset(Dataset):
         self.word2id = word2id
         self.relation = relation
         self.max_sent = max_sent
-        with open(file_path, mode="r", encoding="utf-8") as f:
-            for line in f:
+        with open(file_path, mode="r", encoding="utf-8") as file:
+            for line in file:
                 line = line.strip()
                 line = line.strip("\n")
                 line = line.split("\t")
@@ -80,6 +108,14 @@ class TextDataset(Dataset):
                 self.texts.append(data)
 
     def _position(self, data):
+        """Calculate position of PCNN in data.
+
+        Args:
+            data (Dict): preprocessed data.
+
+        Returns:
+            Dict: dict attached by position.
+        """
         pos1 = []
         pos2 = []
         head1 = data["head"][0]
@@ -100,6 +136,17 @@ class TextDataset(Dataset):
             return False
 
     def _preprocess(self, data, tokenizer, word2id, relation):
+        """Preprocess raw data.
+
+        Args:
+            data (Dict): raw data to be processed.
+            tokenizer (Callable): split sentence to word list.
+            word2id (Dict): map word to it's id.
+            relation (Dict): map relation to it's id.
+
+        Returns:
+            Dict: processed data.
+        """
         for k in data:
             if k == "relation":
                 if data[k] != "<unkonwn>":
@@ -120,14 +167,3 @@ class TextDataset(Dataset):
 
     def __len__(self):
         return len(self.texts)
-
-
-if __name__ == "__main__":
-    x = get_max_length(
-        [
-            os.path.join("remote-data", "exp3-data", "data_train.txt"),
-            os.path.join("remote-data", "exp3-data", "data_val.txt"),
-            os.path.join("remote-data", "exp3-data", "test_exp3.txt"),
-        ]
-    )
-    print(x)
