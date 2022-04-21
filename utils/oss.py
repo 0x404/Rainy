@@ -1,13 +1,16 @@
 """Manage data download and upload"""
+#pylint: disable=logging-fstring-interpolation
 import os
+import logging
 import zipfile
 import wget
-import logging
+
 
 logger = logging.getLogger("OSS")
 
 
 def filename_from_url(url):
+    """Get filename from a given url"""
     if url.endswith(".zip"):
         start_pos = url.rindex("/") + 1
         file_name = url[start_pos : len(url) - 4]

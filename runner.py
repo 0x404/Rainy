@@ -1,11 +1,11 @@
 """runner for training loop"""
+#pylint: disable=logging-fstring-interpolation
 import torch
+from tqdm import tqdm
+from torch.utils.tensorboard import SummaryWriter
+from torch.utils.data import DataLoader
 import task
 from utils import get_logger, move_to_device, Saver
-from tqdm import tqdm
-from torch.utils.data import DataLoader
-from torch.utils.tensorboard import SummaryWriter
-
 
 logger = get_logger(__name__)
 
@@ -170,14 +170,14 @@ class Runner:
             batch_size=1,
             collate_fn=getattr(self.task, "collate_fn", None),
         )
-        predictions = list()
+        predictions = []
         with torch.no_grad():
             for data in tqdm(pred_loader, desc="test"):
-                input, _ = data
-                input = move_to_device(input, self.device)
-                output = self.model(input)
-                _, pred = torch.max(output, dim=1)
+                inputs, _ = data
+                inputs = move_to_device(inputs, self.device)
+                outputs = self.model(inputs)
+                _, pred = torch.max(outputs, dim=1)
                 predictions.append(pred.item())
-        with open(self.config.predict_path, mode="w") as f:
+        with open(self.config.predict_path, mode="w", encoding='utf-8') as file:
             for pred in predictions:
-                f.write(f"{pred}\n")
+                file.write(f"{pred}\n")

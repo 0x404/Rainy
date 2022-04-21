@@ -1,6 +1,8 @@
+"""Config parser"""
+# pylint: disable=logging-fstring-interpolation
 import os
-import yaml
 import argparse
+import yaml
 import torch
 from utils import get_logger
 from utils.oss import download, is_downloaded, filename_from_url
@@ -9,6 +11,8 @@ logger = get_logger("Config")
 
 
 class Config:
+    """Config parser"""
+
     def __init__(self):
         self.parser = argparse.ArgumentParser(
             description="Model hyper parameters and configs"
@@ -92,8 +96,8 @@ class Config:
 
     def _load_config_file(self):
         """load config from file"""
-        with open(self.args.config, mode="r") as f:
-            config = yaml.safe_load(f)
+        with open(self.args.config, mode="r", encoding="utf-8") as file:
+            config = yaml.safe_load(file)
         for key in config:
             if key not in self.default:
                 config.pop(key)
@@ -148,7 +152,7 @@ class Config:
 
     def _check_checkpoint(self):
         """Check checkpoint option
-        
+
         If checkpoint dir not exist, create automatically.
         # TODO : support remote checkpoint dir
         """

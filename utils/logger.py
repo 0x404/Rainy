@@ -1,3 +1,4 @@
+"""Logger utils"""
 import logging
 from logging.config import fileConfig
 

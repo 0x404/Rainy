@@ -1,7 +1,10 @@
+"""Model saver"""
+#pylint: disable=consider-using-f-string
+#pylint: disable=logging-fstring-interpolation
 import os
-import torch
-import logging
 import shutil
+import logging
+import torch
 
 logger = logging.getLogger("Saver")
 
@@ -12,7 +15,7 @@ class Saver:
     def __init__(self, model, config):
         self.config = config
         self.model = model
-        self.metric = dict()
+        self.metric = {}
         self._init_metric()
 
     def _init_metric(self):
@@ -25,17 +28,21 @@ class Saver:
             self.metric[float(file[:6])] = os.path.join(save_path, file)
         if len(files) > max_ckpts:
             logger.error(
-                f"checkpoint path {save_path}, detected {len(files)} checkpoints, but max checkpoints is {max_ckpts}"
+                "detected {} checkpoints in {}, but max checkpoints is {}".format(
+                    len(files), save_path, max_ckpts
+                )
             )
             value = sorted(self.metric.keys())
-            for v in value[: len(files) - max_ckpts]:
-                shutil.rmtree(self.metric[v])
+            for key_to_del in value[: len(files) - max_ckpts]:
+                shutil.rmtree(self.metric[key_to_del])
                 logger.error(
-                    f"delete checkpoint {self.metric[v]}, remain checkpoint : {len(self.metric) - 1}"
+                    "delete checkpoint {}, remain checkpoint : {}".format(
+                        self.metric[key_to_del], len(self.metric) - 1
+                    )
                 )
-                del self.metric[v]
+                del self.metric[key_to_del]
         else:
-            logger.info(f"detected {len(files)} checkpoints in checkpoint {save_path}")
+            logger.info("detected {} checkpoints in checkpoint {}".format(len(files), save_path))
 
     def _save(self, save_path):
         """Save model to save path"""
