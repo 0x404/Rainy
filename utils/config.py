@@ -74,6 +74,16 @@ class Config(dict):
 
         with open(filepath, mode="r", encoding="utf-8") as file:
             config = yaml.safe_load(file)
+
+        def handle(config):
+            for k, v in config.items():
+                if isinstance(v, dict):
+                    handle(config[k])
+                elif isinstance(v, str) and v == "None":
+                    config[k] = None
+            return config
+
+        config = handle(config)
         return Config(config)
 
     @staticmethod

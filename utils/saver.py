@@ -13,7 +13,8 @@ class Saver:
     """Model Saver, Managing saving and loading of models"""
 
     def __init__(self, model, config):
-        self.config = config
+        self.config = config.setup
+        self.task_name = config.task.name
         self.model = model
         self.metric = {}
         self._init_metric()
@@ -22,8 +23,9 @@ class Saver:
         """init metric from checkpoint path"""
         save_path = self.config.checkpoint_path
         max_ckpts = self.config.max_checkpoints
-        task = self.config.task
-        files = [file for file in os.listdir(save_path) if file.endswith(task)]
+        files = [
+            file for file in os.listdir(save_path) if file.endswith(self.task_name)
+        ]
         for file in files:
             self.metric[float(file[:6])] = os.path.join(save_path, file)
         if len(files) > max_ckpts:
@@ -68,7 +70,7 @@ class Saver:
         Args:
             accuracy (float): the accuracy of current model.
         """
-        save_name = f"{accuracy:.4f}-{self.config.task}"
+        save_name = f"{accuracy:.4f}-{self.task_name}"
         save_path = os.path.join(self.config.checkpoint_path, save_name)
         if accuracy in self.metric:
             logger.info(f"current accuracy {accuracy} has been recorded, skiped!")

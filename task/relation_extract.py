@@ -26,38 +26,39 @@ class RelationExtract:
     """Relation Extract"""
 
     def __init__(self, config):
+        data_root = config.data.data_root
         word2id = get_word2id(
             [
-                os.path.join(config.data_root, "data_train.txt"),
-                os.path.join(config.data_root, "data_val.txt"),
-                os.path.join(config.data_root, "test_exp3.txt"),
+                os.path.join(data_root, "data_train.txt"),
+                os.path.join(data_root, "data_val.txt"),
+                os.path.join(data_root, "test_exp3.txt"),
             ]
         )
         max_length = get_max_length(
             [
-                os.path.join(config.data_root, "data_train.txt"),
-                os.path.join(config.data_root, "data_val.txt"),
-                os.path.join(config.data_root, "test_exp3.txt"),
+                os.path.join(data_root, "data_train.txt"),
+                os.path.join(data_root, "data_val.txt"),
+                os.path.join(data_root, "test_exp3.txt"),
             ]
         )
-        relation = get_relation(os.path.join(config.data_root, "rel2id.json"))
+        relation = get_relation(os.path.join(data_root, "rel2id.json"))
 
         self.train_dataset = TextDataset(
-            file_path=os.path.join(config.data_root, "data_train.txt"),
+            file_path=os.path.join(data_root, "data_train.txt"),
             tokenizer=tokenizer,
             word2id=word2id,
             relation=relation,
             max_sent=max_length,
         )
         self.valid_dataset = TextDataset(
-            file_path=os.path.join(config.data_root, "data_val.txt"),
+            file_path=os.path.join(data_root, "data_val.txt"),
             tokenizer=tokenizer,
             word2id=word2id,
             relation=relation,
             max_sent=max_length,
         )
         self.pred_dataset = TextDataset(
-            file_path=os.path.join(config.data_root, "test_exp3.txt"),
+            file_path=os.path.join(data_root, "test_exp3.txt"),
             tokenizer=tokenizer,
             word2id=word2id,
             relation=relation,
@@ -65,12 +66,12 @@ class RelationExtract:
             is_test=True,
         )
 
-        device = torch.device("cuda" if config.gpu is not None else "cpu")
+        device = torch.device(config.setup.device)
         self.model = TextCNN(
             word_dim=100, pos_num=max_length, pos_dim=5, word2id=word2id
         )
         self.model.to(device)
-        self.optimizer = optim.Adam(self.model.parameters(), config.lr)
+        self.optimizer = optim.Adam(self.model.parameters(), config.train.lr)
         self.loss_function = torch.nn.CrossEntropyLoss()
         self.lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
             self.optimizer, T_max=10

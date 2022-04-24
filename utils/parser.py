@@ -1,218 +1,183 @@
 """System argument parser"""
-# pylint: disable=logging-fstring-interpolation
+import sys
 import os
 import argparse
-import yaml
-import torch
+from torch.cuda import is_available
+from utils.config import Config
 from utils import get_logger
 from utils.oss import download, is_downloaded, filename_from_url
 
 logger = get_logger("Config")
 
 
-class ArgParser:
-    """Config parser"""
+class Parser:
+    """System argument parser"""
 
     def __init__(self):
-        self.parser = argparse.ArgumentParser(
-            description="Model hyper parameters and configs"
-        )
-        self.parser.add_argument(
-            "--do_train", action="store_true", default=True, help="do training loop"
-        )
-        self.parser.add_argument(
-            "--do_predict", action="store_true", default=False, help="do prediction"
-        )
-        self.parser.add_argument(
-            "--predict_path",
-            type=str,
-            default="predictions.txt",
-            help="prediction result path",
-        )
-        self.parser.add_argument(
-            "--data_root",
-            type=str,
-            default="Data/",
-            help="path where training/evalution data are stored",
-        )
-        self.parser.add_argument(
-            "--checkpoint_path",
-            type=str,
-            default="Checkpoints/",
-            help="path to load/stroe checkpoints",
-        )
-        self.parser.add_argument(
-            "--max_checkpoints", type=int, default=3, help="max num of checkpoints"
-        )
-        self.parser.add_argument(
-            "--init_checkpoint",
-            type=str,
-            default=None,
-            help="init form specified checkpoint",
-        )
-        self.parser.add_argument(
-            "--lr", type=float, default=0.00005, help="learning rate"
-        )
-        self.parser.add_argument(
-            "--train_batch_size", type=int, default=32, help="train batch size"
-        )
-        self.parser.add_argument(
-            "--eval_batch_size", type=int, default=None, help="eval batch size"
-        )
-        self.parser.add_argument("--epochs", type=int, default=5, help="epochs num")
-        self.parser.add_argument(
-            "--accumulate_step",
-            type=int,
-            default=1,
-            help="step of accumulated gradient",
-        )
-        self.parser.add_argument(
-            "--log_every_n_step",
-            type=int,
-            default=200,
-            help="show log message every n step",
-        )
-        self.parser.add_argument(
-            "--save_ckpt_n_step",
-            type=int,
-            default=2000,
-            help="save checkpoints every n step",
-        )
-        self.parser.add_argument(
-            "--max_train_step", type=int, default=None, help="max step of training loop"
-        )
-        self.parser.add_argument(
-            "--task", type=str, default="ImageClassify", help="task name of training"
-        )
-        self.parser.add_argument(
-            "--config", type=str, default=None, help="parser config from file"
-        )
-        self.parser.add_argument("--tensorboard", action="store_true", default=False)
-        self.parser.add_argument("--cpu", action="store_true", default=None)
-        self.parser.add_argument("--gpu", action="store_true", default=None)
-        self.args = self.parser.parse_args()
-        self.default = vars(self.parser.parse_args([]))
-        self._check_args()
+        self.parser = argparse.ArgumentParser()
+        self.parser.add_argument("--config", type=str, required=True)
 
-    def _load_config_file(self):
-        """load config from file"""
-        with open(self.args.config, mode="r", encoding="utf-8") as file:
-            config = yaml.safe_load(file)
-        for key in config:
-            if key not in self.default:
-                config.pop(key)
-        for key, val in self.default.items():
-            if key not in config:
-                config[key] = val
-        return config
+        # general setup
+        self.parser.add_argument("--do_train", action="store_true")
+        self.parser.add_argument("--do_predict", action="store_true")
+        self.parser.add_argument("--tensorboard", action="store_true")
+        self.parser.add_argument("--cpu", action="store_true")
+        self.parser.add_argument("--gpu", action="store_true")
+        self.parser.add_argument("--max_checkpoints", type=int)
+        self.parser.add_argument("--checkpoint_path", type=str)
+        self.parser.add_argument("--log_every_n_step", type=int)
+        self.parser.add_argument("--save_ckpt_n_step", type=int)
 
-    def _check_data_root(self):
-        """Check data root, If it's a remote url, download to local"""
-        args = self.args
-        local_dir = "remote-data/"
-        local_path = os.path.join(
-            os.getcwd(), local_dir, filename_from_url(args.data_root)
-        )
-        if args.data_root.startswith("http://"):
+        # task config
+        self.parser.add_argument("--task", type=str)
+
+        # data config
+        self.parser.add_argument("--data_root", type=str)
+
+        # train config
+        self.parser.add_argument("--lr", type=float)
+        self.parser.add_argument("--train_batch_size", type=int)
+        self.parser.add_argument("--epochs", type=int)
+        self.parser.add_argument("--accumulate_step", type=int)
+        self.parser.add_argument("--init_checkpoint", type=str)
+        self.parser.add_argument("--train_max_step", type=int)
+
+        # predict config
+        self.parser.add_argument("--predict_batch_size", type=int)
+        self.parser.add_argument("--output_root", type=str)
+
+        self.args = vars(self.parser.parse_args())
+        self.config = Config.from_file(self.args.get("config"))
+        Parser.set_default(self.config)
+
+        self._update_config()
+        self._check_data_conifg()
+        self._check_ckpt_config()
+
+    def _update_config(self):
+        """Update config according to input arguments. e.g.
+        lr is 0.01 in config file `test_config.py`, and use the following command:
+        python3 launch --config test_conifg.py --lr 0.05
+        then lr become 0.05
+        """
+        updates = self.input_args
+
+        # modify input args, check device option
+        # device = cpu will be set in default, so we don't set here
+        if "gpu" in updates and "cpu" in updates:
+            updates["device"] = "cuda" if is_available() else "cpu"
+
+        if "gpu" in updates and not is_available():
+            logger.error("torch detected cuda is not avaliable, switched to cpu")
+            updates["device"] = "cpu"
+
+        # update config
+        for config_type, config in self.config.items():
+            for update_key, update_value in updates.items():
+                # train_batch_size refer to train/batch_size
+                # transfer to batch_size so that we can update config
+                if update_key.startswith(config_type):
+                    update_key = update_key[len(config_type) + 1 :]
+                if update_key in config:
+                    config[update_key] = update_value
+
+    def _check_data_conifg(self):
+        """Check data config, make dirs and download data if needed"""
+        data_root = self.config.data.data_root
+        if data_root.startswith("http://"):
             try:
-                logger.info(f"fetching {args.data_root} to local remote-data/ ...")
-                if is_downloaded(args.data_root, local_dir):
+                local_dir = "remote-data/"
+                local_path = os.path.join(os.getcwd(), local_dir)
+                local_path = os.path.join(local_path, filename_from_url(data_root))
+                logger.info(f"fetching {data_root} to local remote-data/ ...")
+
+                if is_downloaded(data_root, local_dir):
                     logger.info(f"{local_path} exists!")
                 else:
-                    download(args.data_root, local_dir)
-                logger.info(f"fetching {args.data_root} succeed!")
-                args.data_root = local_path
+                    download(data_root, local_dir)
+                    logger.info(f"fetching {data_root} succeed!")
+                self.config.data.data_root = local_path
             except Exception:
-                logger.error(f"fetching {args.data_root} failed!")
+                logger.error(f"fetching {data_root} failed!")
                 raise RuntimeError("fetching file failed")
 
-        if not os.path.isdir(args.data_root):
-            if os.path.isfile(args.data_root):
-                raise ValueError(
-                    f"data root {args.data_root} is a file, not a directory!"
-                )
-            raise ValueError(f"data root {args.data_root} is not avaliable!")
+        if not os.path.isdir(self.config.data.data_root):
+            raise ValueError(
+                f"data root {self.config.data.data_root} should be a directory"
+            )
 
-    def _check_gpu(self):
-        """check gpu option, switched to correct option"""
-        args = self.args
-        if args.gpu is not None:
-            if not torch.cuda.is_available():
-                logger.error("GPU not suppoted by your machine!")
-                raise RuntimeError()
-            if args.cpu is not None:
-                logger.error("GPU and CPU are opened both! switched to GPU")
-                args.cpu = None
+    def _check_ckpt_config(self):
+        """Check checkpoint config, make dirs if needed"""
+        init_ckpt = self.config.train.init_checkpoint
+        if init_ckpt is not None:
+            if not os.path.isdir(init_ckpt) and not os.path.isfile(init_ckpt):
+                raise ValueError(f"init checkpoint {init_ckpt} is not avaliable!")
 
-        if args.gpu is None and args.cpu is None:
-            if torch.cuda.is_available():
-                args.gpu = True
-            else:
-                args.cpu = True
-
-    def _check_checkpoint(self):
-        """Check checkpoint option
-
-        If checkpoint dir not exist, create automatically.
-        # TODO : support remote checkpoint dir
-        """
-        args = self.args
-        if args.init_checkpoint is not None:
-            if not os.path.isdir(args.init_checkpoint) and not os.path.isfile(
-                args.init_checkpoint
-            ):
-                raise ValueError(
-                    f"init checkpoint {args.init_checkpoint} is not avaliable!"
-                )
-
-        if not os.path.isdir(args.checkpoint_path):
-            os.makedirs(args.checkpoint_path)
+        checkpoint_path = self.config.setup.checkpoint_path
+        if not os.path.isdir(checkpoint_path):
+            os.makedirs(checkpoint_path)
             logger.warning(
-                f"checkpoint path {args.checkpoint_path} is not exists, create automatically!"
+                f"checkpoint path {checkpoint_path} is not exists, create automatically!"
             )
 
-    def _check_args(self):
-        """Check arguments' behavior is legal"""
-        args = self.args
+    @property
+    def input_args(self):
+        """Get a map including all input arguments.
+        For example, result is {'lr': 0.1, 'epochs':5} for following command:
+        `python3 launch --lr 0.1 --epochs 5`
 
-        if args.config is not None:
-            # set args from config file
-            if not os.path.isfile(args.config):
-                raise ValueError(f"config file {args.config} is not avaliable!")
-            default_config = self._load_config_file()
-            for key, val in default_config.items():
-                if getattr(args, key) == self.default.get(key):
-                    setattr(args, key, val)
+        Returns:
+            Dict: as describe above.
+        """
+        input_options = [opt for opt in sys.argv if opt.startswith("--")]
+        input_options = [opt[2:] for opt in input_options]
+        input_options = {key: self.args[key] for key in input_options}
+        return input_options
 
-        self._check_data_root()
-        self._check_gpu()
-        self._check_checkpoint()
+    @staticmethod
+    def check_config(config):
+        """Check config"""
+        assert isinstance(config, (Config, dict))
+        required = {
+            "setup": ["do_train", "do_predict"],
+            "task": ["name"],
+            "model": [],
+            "data": ["data_root"],
+            "train": ["lr", "batch_size", "epochs"],
+            "predict": [],
+        }
+        for key, value in required.items():
+            if key not in config:
+                raise KeyError(f"{key} config should be set in config file")
+            for attr_required in value:
+                if attr_required not in config[key]:
+                    raise KeyError(
+                        f"{key}.{attr_required} should be set in config file"
+                    )
 
-        # check numel option
-        if args.train_batch_size <= 0:
-            raise ValueError(
-                f"train batch size {args.train_batch_size} is supposed to be bigger than 0!"
-            )
-        if args.eval_batch_size is None:
-            args.eval_batch_size = args.train_batch_size
+    @staticmethod
+    def set_default(config):
+        """Set default value to conifg"""
+        assert isinstance(config, (Config, dict))
+        Parser.check_config(config)
 
-        if args.lr <= 0:
-            raise ValueError(
-                f"learning rate {args.lr} is supposed to be bigger than 0!"
-            )
-        if args.epochs <= 0:
-            raise ValueError(
-                f"epoch num {args.epochs} is supposed to be bigger than 0!"
-            )
-        if args.accumulate_step <= 0:
-            raise ValueError(
-                f"accumulate step {args.accumulate_step} is supposed to be bigger than 0!"
-            )
-        if args.save_ckpt_n_step <= 0:
-            raise ValueError(
-                f"save checkpoint n step {args.save_ckpt_n_step} is supposed to be bigger than 0!"
-            )
-        if args.log_every_n_step <= 0:
-            raise ValueError(
-                f"log every n step {args.log_every_n_step} is supposed to be bigger than 0!"
-            )
+        default = {
+            "setup": {
+                "tensorboard": False,
+                "device": "cuda" if is_available() else "cpu",
+                "max_checkpoints": 3,
+                "checkpoint_path": os.path.join("ckpts", config.task.name),
+                "log_every_n_step": 200,
+                "save_ckpt_n_step": 2000,
+            },
+            "predict": {
+                "batch_size": config.train.batch_size,
+                "output_root": "predictions",
+            },
+            "train": {"accumulate_step": 1, "init_checkpoint": None, "max_step": None},
+        }
+        for cfg_key, cfg_value in default.items():
+            config_toset = config[cfg_key]
+            for default_k, default_v in cfg_value.items():
+                if default_k not in config_toset:
+                    setattr(config_toset, default_k, default_v)

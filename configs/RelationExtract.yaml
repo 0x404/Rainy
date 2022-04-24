@@ -1,14 +1,31 @@
-do_train: True
-do_predict: True
-data_root: http://data-rainy.oss-cn-beijing.aliyuncs.com/data/exp3-data.zip
-checkpoint_path: 'Checkpoints/RelationExtract/'
-max_checkpoints: 3
-lr: 0.0005
-train_batch_size: 32
-eval_batch_size: 32
-epochs: 80
-accumulate_step: 1
-log_every_n_step: 200
-save_ckpt_n_step: 2000
-task: 'RelationExtract'
-tensorboard: True
+setup:
+  do_train: True
+  do_predict: True
+  tensorboard: True
+  device: 'cpu'
+  max_checkpoints: 3
+  checkpoint_path: 'checkpoints/relation_exract/'
+  log_every_n_step: 200
+  save_ckpt_n_step: 2000
+
+task:
+  name: 'RelationExtract'
+
+data:
+  data_root: http://data-rainy.oss-cn-beijing.aliyuncs.com/data/exp3-data.zip
+
+train:
+  lr: 0.0005
+  batch_size: 32
+  epochs: 80
+  accumulate_step: 1
+  init_checkpoint: None
+  max_step: None
+
+predict:
+  batch_size: 32
+  output_root: 'predictions'
+
+model:
+  x: 1
+

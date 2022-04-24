@@ -1,7 +1,9 @@
 **/__pycache__
 runlog.log
 Checkpoints/
+checkpoints/
 runs/
 predictions.txt
+predictions
 prediction.txt
 remote-data/
