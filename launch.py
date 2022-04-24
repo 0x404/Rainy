@@ -1,6 +1,6 @@
 """launcher"""
 from asyncio.log import logger
-from utils import Config
+from utils import ArgParser
 from runner import Runner
 import logging
 
@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 def main():
     """main entry"""
-    config = Config().args
+    config = ArgParser().args
     logger.info("launching runner ...")
     logger.info(f"configs : {config}")
     runner = Runner(config)
