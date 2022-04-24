@@ -70,6 +70,8 @@ class Parser:
         if "gpu" in updates and not is_available():
             logger.error("torch detected cuda is not avaliable, switched to cpu")
             updates["device"] = "cpu"
+        elif "gpu" in updates:
+            updates["device"] = "cuda"
 
         # update config
         for config_type, config in self.config.items():
