@@ -14,9 +14,9 @@
     <br />
     <a href="www.0x404.cn">View Demo</a>
     ·
-    <a href="https://github.com/0x404/rainy/issues">Report Bug</a>
+    <a href="https://github.com/0x404/torch-learning/issues">Report Bug</a>
     ·
-    <a href="https://github.com/0x404/rainy/issues">Request Feature</a>
+    <a href="https://github.com/0x404/torch-learning/issues">Request Feature</a>
   </p>
 </div>
 
