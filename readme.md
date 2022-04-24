@@ -1,10 +1,13 @@
 # Rainy-ML
 
-## 环境依赖
+* 一个供学习的机器学习框架![](https://www.iconfont.cn/search/index?searchType=icon&q=rain&page=1&fromCollection=1&fills=&tag=)
+
+
+## 依赖安装
 
 建议使用docker进行训练，见[docker](#docker)
 
-使用本地环境，需要安装所需依赖：
+如需使用本地环境，请使用如下命令安装依赖：
 
 ```shell
 pip3 install -r docker/requirements.txt
@@ -12,55 +15,67 @@ pip3 install -r docker/requirements.txt
 
 ## 使用说明
 
+* 支持从config文件训练（目前支持yaml和python文件），配置文件参考configs/iamge_classify.py
+
+  ```shell
+  # 使用python文件作为config
+  python3 launch.py --config configs/iamge_classify.py
+
+  # 使用yaml文件作为config
+  python3 launch.py --config configs/relation_extract.yaml
+  ```
+
+* 支持以配置文件为主，参数微调（推荐）
+
+  ```shell
+  python3 launch.py --config configs/iamge_classify.py --train_max_step 50000 --lr 0.001
+  ```
+
 * 支持参数命令训练
 
   ```shell
   python3 launch.py --task ImageClassify --data_root Dataset/ --checkpoint_path Checkpoints/ImageClassify/
-  ```
-
-* 支持从config文件训练（目前仅支持yaml），配置文件参考configs/ImageClassify.yaml
-
-  ```shell
-  python3 launch.py --config configs/ImageClassify.yaml
-  ```
-
-* 支持以配置文件为主，参数微调
-
-  ```shell
-  python3 launch.py --config configs/ImageClassify.yaml --max_train_step 50000
-  ```
-
-  
+  ```  
 
 ## 训练参数说明
 
-```shell
-# 必须填写
---task                  # 训练所选择的task
---data_root		# 数据集文件夹，支持本地和远程
---do_train              # 进行训练，默认为True
---do_predict            # 进行预测推理，默认为False
-
-# 建议修改
---lr			# 学习率，默认为0.00005
---epochs		# 训练轮数，默认为5
---train_batch_size	# 训练数据batch size，默认为32
---eval_batch_size	# valid数据btach size，默认与train相同
---checkpoint_path	# 断点保存所在文件夹，默认为Checkpoints/
-
-# 优化选项
---accumulate_step	# 梯度累加部署，默认为1(表示不开启)
---max_train_step	# 最多训练的步数，默认为None，由epoch和数据集决定
---tensorboard		# 使用tensorboard，默认输出为当前目录下runs/
---init_checkpoint	# 从指定文件夹或者文件初始化模型，默认为None
---cpu                   # 使用cpu进行训练，默认如果有gpu则用gpu
---gpu                   # 使用gpu进行训练，默认如果有gpu则用gpu
-
-# 建议保持不变
---max_checkpoints	# 最多保存的断点数量，默认为3
---log_every_n_step	# 每隔多少步输出log信息，默认200step
---save_ckpt_n_step	# 每隔多少步做一次validation，保存断点，默认2000
---config                # 从config文件中读取配置
+```python
+# setup 基本参数
+setup = dict(
+    do_train=True,          # 是否训练
+    do_predict=True,        # 是否预测
+    tensorboard=False,      # 是否开启tensorboard
+    device="cpu",           # 在哪个设备上训练，cuda或者cpu
+    max_checkpoints=3,      # 最多保存的断点个数
+    checkpoint_path=os.path.join("checkpoints", "relation_exract"), # 断点保存位置
+    log_every_n_step=200,   # 每多少步输出一次log信息
+    save_ckpt_n_step=2000,  # 每多少步进行一次validation并保存断点
+)
+# task 任务相关参数
+task = dict(
+  name="RelationExtract",   # 所使用的task
+)
+# data 数据集相关参数
+data = dict(
+    # 数据集位置，可以是本地路径也可以是url远程路径（目前仅支持.zip文件）
+    data_root="http://data-rainy.oss-cn-beijing.aliyuncs.com/data/exp3-data.zip"
+)
+# train 训练相关参数
+train = dict(
+    lr=0.0005,              # 学习率
+    batch_size=32,          # 批次大小
+    epochs=80,              # epoch轮数
+    accumulate_step=1,      # 梯度累加步数，1相当于不使用
+    init_checkpoint=None,   # 从哪个checkpoint初始化，默认不初始化
+    max_step=None,          # 最多训练多少步，为None则按epochs算
+)
+# predict 预测相关参数
+predict = dict(
+    batch_size=32,              # 批次大小            
+    output_root="predictions",  # 输出位置
+)
+#model 网络模型相关参数
+model = dict()
 
 ```
 
