@@ -114,7 +114,9 @@ docker run -it --name ml-rainy rainy
 
 - [x] 灵活支持GPU，CPU
 - [x] 支持本地数据集和远程数据集
+- [x] 支持python文件作为config
 - [ ] 添加单元测试，CI集成
-- [ ] 支持将训练的结果（checkpoints，tensorboard，predictions）打包上传到指定路径
+- [ ] 重构runner，支持各类hook，方便用户定制操作
+- [ ] 支持将训练的结果（checkpoints，tensorboard，predictions，runlog）打包上传到指定路径
 - [ ] 丰富模型，边学习边实践
 - [ ] 支持多卡训练
