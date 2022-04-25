@@ -9,7 +9,7 @@
   <h3 align="center">Rainy-ML</h3>
 
   <p align="center">
-    A deepLearning framework
+    Learn deepLearning framework
     <br />
     <br />
     <a href="www.0x404.cn">View Demo</a>
@@ -19,16 +19,6 @@
     <a href="https://github.com/0x404/rainy/issues">Request Feature</a>
   </p>
 </div>
-
-## 依赖安装
-
-建议使用docker进行训练，见[docker](#docker)
-
-如需使用本地环境，请使用如下命令安装依赖：
-
-```shell
-pip3 install -r docker/requirements.txt
-```
 
 ## 使用说明
 
@@ -96,6 +86,16 @@ model = dict()
 
 ```
 
+## 依赖安装
+
+建议使用docker进行训练，见[docker](#docker)
+
+本地环境，请使用如下命令安装所需依赖：
+
+```shell
+pip3 install -r docker/requirements.txt
+```
+
 ## Docker
 
 创建镜像：
@@ -107,7 +107,12 @@ docker build --file docker/Dockerfile -t rainy .
 创建容器，在容器内训练：
 
 ```shell
+# start container
 docker run -it --name ml-rainy rainy
+
+# do your train pipeline
+python3 launch.py --config configs/iamge_classify.py
+
 ```
 
 ## TODO
@@ -117,6 +122,7 @@ docker run -it --name ml-rainy rainy
 - [x] 支持python文件作为config
 - [ ] 添加单元测试，CI集成
 - [ ] 重构runner，支持各类hook，方便用户定制操作
+- [ ] 重构logger，定义多类logger，简化log输出
 - [ ] 支持将训练的结果（checkpoints，tensorboard，predictions，runlog）打包上传到指定路径
 - [ ] 丰富模型，边学习边实践
 - [ ] 支持多卡训练
