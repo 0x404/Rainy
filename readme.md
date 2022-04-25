@@ -2,7 +2,7 @@
 
 <br />
 <div align="center">
-  <a href="https://github.com/0x404/torch-learning">
+  <a href="https://github.com/0x404/rainy">
     <img src="http://image-hosting-404.oss-cn-beijing.aliyuncs.com/img/rainy%20(2).png" alt="Logo" width="128" height="128">
   </a>
 
@@ -14,9 +14,9 @@
     <br />
     <a href="www.0x404.cn">View Demo</a>
     ·
-    <a href="https://github.com/0x404/torch-learning/issues">Report Bug</a>
+    <a href="https://github.com/0x404/rainy/issues">Report Bug</a>
     ·
-    <a href="https://github.com/0x404/torch-learning/issues">Request Feature</a>
+    <a href="https://github.com/0x404/rainy/issues">Request Feature</a>
   </p>
 </div>
 
