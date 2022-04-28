@@ -1,0 +1,9 @@
+a:
+  b: "a string"
+  c:
+    c_b: "b_string"
+    d:
+      d_b: "d string"
+      x: 1
+      y: 2
+
