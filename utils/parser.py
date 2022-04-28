@@ -2,10 +2,11 @@
 import sys
 import os
 import argparse
+from pathlib import Path
 from torch.cuda import is_available
 from utils.config import Config
 from utils import get_logger
-from utils.oss import download, is_downloaded, filename_from_url
+from utils.oss import OSS
 
 logger = get_logger("Config")
 
@@ -88,21 +89,28 @@ class Parser:
         data_root = self.config.data.data_root
         if data_root.startswith("http://"):
             try:
-                local_dir = "remote-data/"
-                local_path = os.path.join(os.getcwd(), local_dir)
-                local_path = os.path.join(local_path, filename_from_url(data_root))
-                logger.info(f"fetching {data_root} to local remote-data/ ...")
+                local_dir = Path("remote-data/").absolute()
+                download_path = local_dir.joinpath(OSS.basename(data_root, ""))
+                extract_path = local_dir.joinpath(OSS.basename(data_root, ".zip"))
 
-                if is_downloaded(data_root, local_dir):
-                    logger.info(f"{local_path} exists!")
+                if extract_path.exists():
+                    logger.info(f"{str(extract_path)} file exists!")
                 else:
-                    download(data_root, local_dir)
-                    logger.info(f"fetching {data_root} succeed!")
-                self.config.data.data_root = local_path
+                    if not OSS.is_download(data_root, local_dir):
+                        logger.info(f"fetching {data_root} to local remote-data/ ...")
+                        OSS.download(data_root, local_dir)
+                    logger.info(
+                        f"unziping {str(download_path)} to {str(extract_path)} ..."
+                    )
+                    OSS.extract(download_path, extract_path, remove=True)
+                    logger.info(f"unzip succed! remove {str(download_path)}")
+
+                # set config's data_root to new extracted data path
+                self.config.data.data_root = str(extract_path)
             except Exception:
                 logger.error(f"fetching {data_root} failed!")
                 raise RuntimeError("fetching file failed")
-
+        # check local data root
         if not os.path.isdir(self.config.data.data_root):
             raise ValueError(
                 f"data root {self.config.data.data_root} should be a directory"

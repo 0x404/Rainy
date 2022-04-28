@@ -2,6 +2,8 @@
 # pylint: disable=logging-fstring-interpolation
 import os
 import logging
+from pathlib import Path
+import shutil
 import zipfile
 import wget
 
@@ -9,58 +11,110 @@ import wget
 logger = logging.getLogger("OSS")
 
 
-def filename_from_url(url):
-    """Get filename from a given url"""
-    if url.endswith(".zip"):
-        start_pos = url.rindex("/") + 1
-        file_name = url[start_pos : len(url) - 4]
-    else:
-        raise NotImplementedError("file format not supported")
-    return file_name
+class OSS:
+    """Mange data download and upload"""
 
+    @staticmethod
+    def extract(filename, target_path=None, remove=False):
+        """Extract compressed file.
+        Currently only support .zip file.
 
-def is_downloaded(url, local_path):
-    """Check is url data been downloaded"""
-    file_name = filename_from_url(url)
-    file_path = os.path.join(local_path, file_name)
-    if os.path.exists(file_path):
-        return True
-    return False
+        Args:
+            filename (str or Path): compressed file path.
+            target_path (str or Path, optional): target path. Defaults to None.
+            remove (bool, optional): whther remove original .zip file. Defaults to False.
 
+        Raises:
+            NotImplementedError: currently only .zip supported.
+        """
+        assert isinstance(filename, (str, Path))
+        if isinstance(filename, str):
+            filename = Path(filename)
+        if isinstance(target_path, str):
+            target_path = Path(target_path)
 
-def download(url, local_path):
-    """DownLoad url data to local path.
+        if filename.suffix == ".zip":
+            basename = OSS.basename(str(filename), ".zip")
+            if target_path is None:
+                extract_path = filename.parent.joinpath(basename)
+            else:
+                extract_path = target_path.parent.joinpath(basename)
 
-    Args:
-        url (str): remote data dir, starts with `http://`.
-        local_path (str): local target path.
+            if extract_path.exists():
+                shutil.rmtree(str(extract_path))
+            with zipfile.ZipFile(str(filename)) as zip:
+                zip.extractall(extract_path)
 
-    Raises:
-        NotImplementedError: if file not ends with `.zip`.
-        RuntimeError: if download failed.
-
-    Returns:
-        str: local file dir.
-    """
-    current_dir = os.getcwd()
-    os.makedirs(local_path, exist_ok=True)
-    os.chdir(local_path)
-    try:
-        file_name = wget.download(url)
-        if file_name.endswith(".zip"):
-            logger.info("unzip file ...")
-            file_path = os.path.join(os.getcwd(), file_name[: len(file_name) - 4])
-            with zipfile.ZipFile(file_name) as zip_ref:
-                zip_ref.extractall(file_path)
-            os.remove(file_name)
-            logger.info(f"removed {os.path.join(os.getcwd(), file_name)}")
+            if remove:
+                # remove origin .zip file if required
+                os.remove(str(filename))
         else:
-            logger.error(f"{url} file format not supported!")
-            raise NotImplementedError("file format not supported")
-    except Exception:
-        logger.error(f"failed to download {url}")
-        os.chdir(current_dir)
-        raise RuntimeError("failed to download")
-    os.chdir(current_dir)
-    logger.info(f"successfull download {url} to {file_path}")
-    return file_path
+            raise NotImplementedError
+
+    @staticmethod
+    def basename(basestr: str, suffix: str):
+        """Get a base file name of path.
+        E.g. basename of 'test/exp-data.zip' with suffix '.zip' is 'exp-data'
+
+        Args:
+            basestr (str): base file path.
+            suffix (str): file suffix.
+
+        Returns:
+            str: base file name without suffix
+        """
+        basestr = basestr[basestr.rfind("/") + 1 :]
+        if basestr.endswith(suffix):
+            basestr = basestr[: len(basestr) - len(suffix)]
+            return basestr
+        return basestr
+
+    @staticmethod
+    def download(url, local_path):
+        """DownLoad url data to local path and extract file.
+
+        Args:
+            url (str): remote data dir, starts with `http://`.
+            local_path (str): local target path.
+
+        Raises:
+            NotImplementedError: if file not ends with `.zip`.
+            RuntimeError: if download failed.
+
+        Returns:
+            str: name of downloaded file.
+        """
+        last_dir = os.getcwd()
+        os.makedirs(local_path, exist_ok=True)
+        os.chdir(local_path)
+        try:
+            filename = wget.download(url)
+        except Exception:
+            logger.error(f"failed to download {url}")
+            os.chdir(last_dir)
+            raise RuntimeError("failed to download")
+        os.chdir(last_dir)
+        return filename
+
+    @staticmethod
+    def is_download(url, local_path):
+        """Check whther url is downloaded to local path.
+
+        Args:
+            url (str): remote date url.
+            local_path (str): local path.
+
+        Raises:
+            NotImplementedError: only .zip supported.
+
+        Returns:
+            bool: True if downloaded.
+        """
+        if url.endswith(".zip"):
+            basename = OSS.basename(url, ".zip")
+            file_path = Path(local_path).joinpath(basename + ".zip")
+            if file_path.exists():
+                return True
+            return False
+        else:
+            raise NotImplementedError
