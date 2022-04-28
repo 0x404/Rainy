@@ -16,7 +16,7 @@ jobs:
 
       # Run a container
       - name: Run Container
-        run: docker run -it --name ml-rainy rainy
+        run: docker run -i --name ml-rainy rainy
 
       # Pytest
       - name: Run Pytest
