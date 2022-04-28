@@ -1,0 +1,23 @@
+name: UnitTest
+on: push
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v3
+
+      # build docker image
+      - name: Build Docker Image
+        run: docker build --file docker/Dockerfile -t rainy .
+
+      # Run a container
+      - name: Run Container
+        run: docker run -it --name ml-rainy rainy
+
+      # Pytest
+      - name: Run Pytest
+        run: python3 -m pytest test/
