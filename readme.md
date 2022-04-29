@@ -128,7 +128,7 @@ python3 launch.py --config configs/iamge_classify.py
 - [x] 灵活支持GPU，CPU
 - [x] 支持本地数据集和远程数据集
 - [x] 支持python文件作为config
-- [ ] 添加单元测试，CI集成
+- [x] 添加单元测试，CI集成
 - [ ] 重构runner，支持各类hook，方便用户定制操作
 - [ ] 重构logger，定义多类logger，简化log输出
 - [ ] 支持将训练的结果（checkpoints，tensorboard，predictions，runlog）打包上传到指定路径
