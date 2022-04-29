@@ -4,7 +4,9 @@
 import os
 import shutil
 import logging
+from numpy import isin
 import torch
+from pathlib import Path
 
 logger = logging.getLogger("Saver")
 
@@ -100,27 +102,29 @@ class Saver:
         """Resume from checkpoint file
 
         Args:
-            file_path (str): checkpoint file path, dir or file,
+            file_path (str or Path): checkpoint file path, dir or file,
                              if file, endswith `.pth` or `.model`.
 
         Raises:
             RuntimeError: checkpoint is not avaliable.
         """
-        if file_path.endswith(".pth"):
-            assert os.path.isfile(file_path)
+        assert isinstance(file_path, (str, Path))
+        if isinstance(file_path, str):
+            file_path = Path(file_path)
+
+        assert file_path.exists(), f"{str(file_path)} no exists"
+
+        if file_path.suffix == ".pth":
             state_dict = torch.load(file_path)
             self.model.load_state_dict(state_dict)
             logger.info(f"resume model from {file_path}")
             return
-        if file_path.endswith(".model"):
-            assert os.path.isfile(file_path)
-            self.model = torch.load(file_path)
-            logger.info(f"resume model from {file_path}")
-            return
-        if os.path.isdir(file_path):
+
+        if file_path.is_dir():
             files = os.listdir(file_path)
             for file in files:
-                if file.endswith(".pth"):
-                    self.resume_from_file(os.path.join(file_path, file))
+                file = file_path.joinpath(file)
+                if file.suffix == ".pth":
+                    self.resume_from_file(file)
                     return
-            raise RuntimeError(f"resume file {file_path} not avaliable!")
+        raise RuntimeError(f"resume file {file_path} not avaliable!")
