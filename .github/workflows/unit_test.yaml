@@ -14,6 +14,10 @@ jobs:
       - name: Build Docker Image
         run: docker build --file docker/Dockerfile_github -t rainy .
 
+      # code style
+      - name: Code Style Analyse
+        run: docker run rainy scripts/black.sh
+
       # unit test
       - name: Run Pytest
         run: docker run rainy scripts/unit-test.sh
