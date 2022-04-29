@@ -14,7 +14,11 @@ jobs:
       - name: Build Docker Image
         run: docker build --file docker/Dockerfile -t rainy .
 
-      # start test
-      - name: Run Container
-        run: docker run rainy python3 -m pytest test/
+      # unit test
+      - name: Run Pytest
+        run: docker run rainy scripts/test.sh
+      
+      # workflow test
+      - name: Run Launch test
+        run: docker run rainy scripts/workflow-test.sh
 
