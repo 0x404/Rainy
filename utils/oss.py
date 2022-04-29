@@ -116,5 +116,4 @@ class OSS:
             if file_path.exists():
                 return True
             return False
-        else:
-            raise NotImplementedError
+        raise NotImplementedError

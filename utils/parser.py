@@ -8,6 +8,7 @@ from utils.config import Config
 from utils import get_logger
 from utils.oss import OSS
 
+# pylint: disable=logging-fstring-interpolation
 logger = get_logger("Config")
 
 
