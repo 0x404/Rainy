@@ -16,7 +16,7 @@ jobs:
 
       # unit test
       - name: Run Pytest
-        run: docker run rainy scripts/test.sh
+        run: docker run rainy scripts/unit-test.sh
       
       # workflow test
       - name: Run Launch test
