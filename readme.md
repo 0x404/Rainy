@@ -6,7 +6,7 @@
     <img src="http://image-hosting-404.oss-cn-beijing.aliyuncs.com/img/rainy%20(2).png" alt="Logo" width="128" height="128">
   </a>
 
-  <h3 align="center">Rainy-ML</h3>
+  <h3 align="center">Rainy</h3>
 
   <p align="center">
     Learn deepLearning framework
